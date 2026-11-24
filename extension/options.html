@@ -11,7 +11,7 @@
       <a href="#review" class="nav-link">◇ <span>Review queue</span></a>
       <a href="#activity" class="nav-link">◷ <span>Activity</span></a>
       <a href="#preferences" class="nav-link">⚙ <span>Preferences</span></a>
-      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.6 Beta · Consumer / Admin</small></div>
+      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.7 Beta · Consumer / Admin</small></div>
     </aside>
     <main class="dashboard-main">
       <div class="topline"><span>SECURITY / DASHBOARD</span><span class="topline-right">PRIVATE WORKSPACE</span></div>
@@ -41,11 +41,11 @@
         <p id="cloudFeedStatus" class="hint">Cloud feed not synchronized.</p><p id="cloudMessage" class="hint" aria-live="polite"></p>
       </section>
       <section class="panel" id="community-console">
-        <div class="panel-title"><div><h2>Community reporting and moderation</h2><p>Separate account-based reports, owner review, a reporting dashboard, and controls for approved public publication.</p></div><span class="pill">v0.9</span></div>
-        <p class="hint">This is a separate console on the local cloud API. To test it, start the cloud API, create an owner account using <code>CREATE_OWNER.cmd</code>, then open the console. Reporter accounts can only see their own submissions.</p>
+        <div class="panel-title"><div><h2>Community reporting and moderation</h2><p>Anonymous community reports, administrator review, and approved public summaries.</p></div><span class="pill">v0.9</span></div>
+        <p class="hint">The community queue is separate from the private local watchlist below. Users submit anonymous reports from the popup. For local testing, run <code>RUN_LOCAL.cmd</code> and create an owner only if needed with <code>py -3.12 -m cloud_api.manage_owner</code>.</p>
         <div class="connection-form"><button id="openCommunityConsole" type="button" class="primary-button">Open administrator console</button><span class="hint">Local demo: 127.0.0.1:8877/dashboard</span></div>
       </section>
-      <section class="panel" id="watchlist"><div class="panel-title"><div><h2>Indicator database</h2><p>Submit a reported domain, URL, email, phone number or address. Then review its evidence in the queue below. A match is not proof of fraud.</p></div><div class="data-actions"><button id="importButton" class="secondary-button" type="button">Import JSON</button><button id="exportButton" class="secondary-button" type="button">Export JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></div>
+      <section class="panel" id="watchlist"><div class="panel-title"><div><h2>Private local indicator database (admin only)</h2><p>These records are not sent to the community admin console. Add a domain, URL, email, phone number or address. Then review its evidence in the queue below. A match is not proof of fraud.</p></div><div class="data-actions"><button id="importButton" class="secondary-button" type="button">Import JSON</button><button id="exportButton" class="secondary-button" type="button">Export JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></div>
         <div id="importMessage" class="hint" aria-live="polite"></div>
         <form id="addForm" class="indicator-form">
           <div class="field"><label for="kind">Indicator type</label><select id="kind" required><option value="domain">Domain</option><option value="url">URL</option><option value="email">Email address</option><option value="phone">Phone number (US/Canada)</option><option value="address">Physical address</option></select></div>
@@ -88,9 +88,10 @@
         <div class="setting-row"><div><strong>Paused sites</strong><p>Scanning is turned off for these domains and their subdomains. Use this only for sites you intentionally want to exclude.</p></div><div class="muted-site-control"><div id="mutedList" class="muted-list"></div><input id="mutedInput" placeholder="example.org" aria-label="Website to pause"><button id="addMuted" type="button" class="secondary-button">Add site</button></div></div>
         <button id="savePreferences" type="button" class="primary-button">Save preferences</button> <span id="preferencesMessage" class="hint" aria-live="polite"></span>
       </section>
-      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.6 Beta · Independent open-source project<div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
+      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.7 Beta · Independent open-source project<div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
     </main>
   </div>
+  <script src="shared/feed.js"></script>
   <script src="options.js"></script>
 <div class="legal-options">Independent open-source beta. Warnings are educational and are not proof of fraud or safety.</div>
 </body>

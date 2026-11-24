@@ -90,23 +90,6 @@ async function updateMuteButton() {
   byId('muteButton').disabled = !host;
   byId('muteButton').textContent = (saved.settings?.mutedHosts || []).includes(host) && host ? 'Resume this site' : 'Pause this site';
 }
-async function reportCurrentSite() {
-  // Only a user-initiated click opens this report form. We do not upload the
-  // webpage, its content, or the URL to the database automatically.
-  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-  let candidate;
-  try {
-    const u = new URL(tab?.url || '');
-    if (!['http:', 'https:'].includes(u.protocol)) throw new Error('Unsupported page');
-    // Report the hostname, not the full URL. Query strings can contain
-    // personal details, one-time links, or authentication tokens.
-    candidate = u.hostname;
-  } catch {
-    byId('siteMessage').textContent = 'Open a regular website first to report it.';
-    return;
-  }
-  await chrome.tabs.create({url: chrome.runtime.getURL('options.html') + '?report=' + encodeURIComponent(candidate)});
-}
 async function lookupIndicator() {
   const kind = byId('lookupKind').value;
   const value = byId('lookupValue').value.trim();
@@ -122,7 +105,7 @@ async function lookupIndicator() {
   if (local.match) {
     const reviewed = ['verified','published','external'].includes(local.match.status);
     save(reviewed ? 'Matching reviewed record' : 'Matching unverified report',
-      'Found an exact match in your locally cached records. A report is not proof of fraud.',
+      'Found an exact match in your locally cached records. A report is not proof of fraud.' + (local.match.reason ? ' Review: ' + local.match.reason : ''),
       reviewed ? 'bad' : 'caution');
   }
   // Only the user's explicit Look up click sends this value to the API.
@@ -154,6 +137,9 @@ async function lookupIndicator() {
     const data = await response.json();
     if (data?.match === true && data?.classification === 'reviewed_report') {
       save('Reviewed contact indicator match', 'A reviewer explicitly made this contact searchable. This does not prove the sender or number is fraudulent.', 'bad');
+      if (typeof data.public_summary === 'string' && data.public_summary.length <= 240 && data.public_summary.trim()) {
+        save('Public review summary', data.public_summary, 'bad');
+      } else { save('Public review summary', 'No public explanation has been provided yet.', 'caution'); }
     } else if (!local.match) {
       save('No reviewed match found', 'No exact match in the available local data or published lookup records. This is not a safety guarantee.', 'ok');
     }
@@ -175,7 +161,6 @@ async function main() {
   byId('settingsButton').addEventListener('click', () => chrome.runtime.openOptionsPage());
   byId('manageButton').addEventListener('click', () => chrome.runtime.openOptionsPage());
   byId('scanButton').addEventListener('click', scanTab);
-  byId('reportSiteButton').addEventListener('click', reportCurrentSite);
   byId('muteButton').addEventListener('click', toggleMute);
   updateMuteButton();
   byId('syncButton').addEventListener('click', synchronize);
@@ -213,8 +198,12 @@ async function openCommunitySite() {
         !(url.protocol === 'https:' || (url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '8877'))) throw Error();
     origin = url.origin;
   } catch {
-    byId('siteMessage').textContent = 'Set a trusted reporting API in Settings (Published intelligence feed) first.';
-    return;
+    // An explicit local test choice avoids silently contacting any remote service.
+    if (!confirm('No reporting service is configured. Open the local test report form at 127.0.0.1:8877? Start RUN_LOCAL.cmd first.')) {
+      byId('siteMessage').textContent = 'Set a reporting API in Settings (Published intelligence feed).';
+      return;
+    }
+    origin = 'http://127.0.0.1:8877';
   }
   const consoleUrl = origin + '/report' +
     (host ? '#domain=' + encodeURIComponent(host) : '');

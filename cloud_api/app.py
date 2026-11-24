@@ -78,7 +78,7 @@ metadata.create_all(engine)
 
 # The extension can read GET /v1/feed without a secret.
 # No CORS middleware is enabled, so ordinary websites do not receive API access.
-app = FastAPI(title='TrueDuck Sentinel API', version='0.9.6', docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title='TrueDuck Sentinel API', version='0.9.7', docs_url=None, redoc_url=None, openapi_url=None)
 
 # A hosted API should only answer requests for its configured domain.
 # In local mode, omit this middleware so the Windows demo remains unchanged.
@@ -198,19 +198,26 @@ def check_owner_token(request: Request) -> None:
 
 def current_feed() -> dict:
     """Build a public snapshot only from the cloud database's safe columns."""
+    # Import the summary table after the community router has initialized.
+    from .community import public_review_summaries
     with engine.connect() as connection:
         items = connection.execute(select(indicators_table).order_by(
             indicators_table.c.kind, indicators_table.c.value)).mappings().all()
         meta = connection.execute(select(meta_table).where(meta_table.c.id == 1)).mappings().first()
         community = connection.execute(select(
             community_public_table.c.kind, community_public_table.c.value,
-            community_public_table.c.classification
-        )).mappings().all()
+            community_public_table.c.classification, public_review_summaries.c.summary
+        ).outerjoin(public_review_summaries,
+                    public_review_summaries.c.report_id == community_public_table.c.report_id)).mappings().all()
     # Merge the two approved feeds. A matching entry appears only once.
     # Owner-uploaded entries have precedence if both sets contain the same value.
     merged = {(item['kind'], item['value']): dict(item) for item in items}
     for item in community:
-        merged.setdefault((item['kind'], item['value']), dict(item))
+        key = (item['kind'], item['value'])
+        entry = merged.setdefault(key, {k: item[k] for k in ('kind', 'value', 'classification')})
+        # Only a deliberately published community summary is eligible for the feed.
+        if item['summary']:
+            entry['public_summary'] = item['summary']
     published = sorted(merged.values(), key=lambda item: (item['kind'], item['value']))
     # Public results contain no private evidence, reporter information, or token.
     return {

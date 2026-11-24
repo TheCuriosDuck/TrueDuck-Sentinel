@@ -318,48 +318,6 @@ function parseCloudFeedUrl(value) {
   }
   return url;
 }
-function publishedRecord(raw) {
-  if (!raw || raw.classification !== 'reviewed_report' || !['domain', 'url'].includes(raw.kind) || typeof raw.value !== 'string') {
-    throw new Error('Unexpected feed indicator type');
-  }
-  const normalized = ScamLensCanonical(raw.kind, raw.value);
-  if (!normalized || normalized !== raw.value || raw.value.length > 2100 || /[?#]/.test(raw.value)) {
-    throw new Error('Invalid indicator value in feed');
-  }
-  // No private notes or other untrusted metadata is accepted from this server.
-  return {kind: raw.kind, value: raw.value, canonical: normalized,
-          status: 'published', review_state: 'approved', source: 'User-configured public feed', reason: ''};
-}
-function ScamLensCanonical(kind, value) {
-  if (kind === 'domain') {
-    if (/^(?:\d+\.){3}\d+$/.test(value) || value === 'localhost') return '';
-    if (!/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(value)) return '';
-    if (value.endsWith('.local') || value.endsWith('.internal')) return '';
-    return value;
-  }
-  try {
-    const url = new URL(value);
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash ||
-        !url.hostname.includes('.') || /^(?:localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2[0-9]|3[01])\.)/.test(url.hostname)) return '';
-    return `${url.protocol}//${url.host.toLowerCase()}${url.pathname || '/'}`;
-  } catch { return ''; }
-}
-async function limitedJson(response) {
-  if (!response.ok) throw new Error(`Cloud feed request failed (${response.status})`);
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error('Cloud response body unavailable');
-  const chunks = []; let size = 0;
-  while (true) {
-    const {value, done} = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > 700_000) { await reader.cancel(); throw new Error('Cloud feed too large'); }
-    chunks.push(value);
-  }
-  const decoder = new TextDecoder('utf-8', {fatal:true});
-  const text = chunks.map(x => decoder.decode(x, {stream:true})).join('') + decoder.decode();
-  return JSON.parse(text);
-}
 async function syncCloudFeed() {
   // User-initiated: request permission only for the selected API hostname.
   let url;
@@ -371,21 +329,8 @@ async function syncCloudFeed() {
     if (!allowed) { message('cloudMessage', 'Site permission was not granted.', true); return; }
     message('cloudMessage', 'Downloading published indicators…');
     const response = await fetch(url.href, {signal: AbortSignal.timeout(10000), cache: 'no-store'});
-    const doc = await limitedJson(response);
-    if (doc.schema !== 'scamlens.public-feed.v1' || !Array.isArray(doc.indicators) || doc.indicators.length > 5000) {
-      throw new Error('Unexpected public-feed format');
-    }
-    // A stale source should not be accepted as fresh intelligence.
-    if (doc.generated_at && (Math.abs(Date.now() - Date.parse(doc.generated_at)) > 7 * 86400000 || Number.isNaN(Date.parse(doc.generated_at)))) {
-      throw new Error('Published snapshot is stale or has an invalid timestamp');
-    }
-    const unique = new Set();
-    const records = doc.indicators.map(item => {
-      const record = publishedRecord(item);
-      const key = record.kind + ':' + record.canonical;
-      if (unique.has(key)) throw new Error('Duplicate published record');
-      unique.add(key); return record;
-    });
+    const doc = await ScamLensFeed.readLimitedJson(response);
+    const records = ScamLensFeed.validateFeed(doc);
     const synced = new Date().toISOString();
     // Store only the permitted public indicators; NEVER send a local admin token.
     await chrome.storage.local.set({publicFeedCache: records, publicFeedUrl: url.href, publicFeedSyncedAt: synced});
@@ -458,6 +403,9 @@ main().catch(error => message('connectionMessage', error.message, true));
 
 // This button opens the separate website used to manage community submissions.
 // It doesn't pass any private database access token to the reporting service.
-$('openCommunityConsole')?.addEventListener('click', () => {
-  window.open('http://127.0.0.1:8877/dashboard', '_blank', 'noopener');
+$('openCommunityConsole')?.addEventListener('click', async () => {
+  const saved = await chrome.storage.local.get('publicFeedUrl');
+  let origin = 'http://127.0.0.1:8877';
+  try { origin = parseCloudFeedUrl(saved.publicFeedUrl || '').origin; } catch { /* Local demo. */ }
+  await chrome.tabs.create({url: origin + '/dashboard'});
 });

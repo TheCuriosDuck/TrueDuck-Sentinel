@@ -141,12 +141,13 @@ async function loadModeration() {
       header.append(title, state); card.append(header);
       card.append(element('p', report.details));
       if (report.evidence_ref) card.append(element('p', `Reporter reference: ${report.evidence_ref}`));
-      if (report.review_note) card.append(element('p', `Owner review: ${report.review_note}`));
+      if (report.review_note) card.append(element('p', `Private owner review: ${report.review_note}`));
+      if (report.public_summary) card.append(element('p', `Public summary: ${report.public_summary}`));
       const actions = element('div', undefined, 'actions');
       actions.append(button('Review', () => openReview(report)));
       if (report.status === 'approved' && ['domain', 'url'].includes(report.kind) && !report.published) {
         actions.append(button('Publish indicator', async () => {
-          if (!confirm(`Publish ${report.value} to the public intelligence feed? Review the evidence before confirming.`)) return;
+          if (!confirm(`Publish ${report.value} and its public summary to the public intelligence feed? Review the evidence and summary for privacy first.`)) return;
           await ownerAction(`/v1/admin/reports/${report.id}/publish`);
         }, 'primary'));
       }
@@ -159,7 +160,7 @@ async function loadModeration() {
         actions.append(button(report.lookup_visible ? 'Disable public lookup' : 'Enable contact lookup', async () => {
           const enabled = !report.lookup_visible;
           if (!confirm(enabled
-            ? 'Make this exact contact searchable without login? Review evidence and privacy rights first. The address/number will NOT appear in the downloadable public feed.'
+            ? 'Make this exact contact searchable without login? Review evidence and privacy rights first. The public summary will be visible to anyone who matches this contact. The address/number will NOT appear in the downloadable public feed.'
             : 'Stop returning matches for this contact in anonymous lookup?')) return;
           try {
             await api(`/v1/admin/reports/${report.id}/lookup-access`, 'POST', {enabled});
@@ -178,6 +179,7 @@ function openReview(report) {
   $('decisionValue').value = report.status === 'pending' ? 'approved' : report.status;
   $('decisionReference').value = report.review_reference || '';
   $('decisionNote').value = report.review_note || '';
+  $('decisionPublicSummary').value = report.public_summary || '';
   $('reviewPanel').hidden = false;
   $('reviewPanel').scrollIntoView({behavior: 'smooth', block: 'start'});
 }
@@ -203,6 +205,13 @@ async function loadAudit() {
 document.querySelectorAll('[data-screen]').forEach(nav => nav.addEventListener('click', () => openScreen(nav.dataset.screen)));
 $('logoutButton').addEventListener('click', () => signOut());
 $('refreshButton').addEventListener('click', loadOverview);
+$('refreshModeration').addEventListener('click', loadModeration);
+// Refresh the visible owner view after switching back from an anonymous report tab.
+window.addEventListener('focus', () => {
+  if (profile?.role !== 'owner') return;
+  if (!$('moderationScreen').hidden) loadModeration();
+  else if (!$('overviewScreen').hidden) loadOverview();
+});
 $('moderationFilter').addEventListener('change', loadModeration);
 $('cancelReview').addEventListener('click', () => { $('reviewPanel').hidden = true; selected = null; });
 $('loginForm').addEventListener('submit', async event => {
@@ -236,7 +245,7 @@ $('decisionForm').addEventListener('submit', async event => {
   try {
     await api(`/v1/admin/reports/${selected.id}/decision`, 'POST', {
       decision: $('decisionValue').value, reference: $('decisionReference').value,
-      note: $('decisionNote').value
+      note: $('decisionNote').value, public_summary: $('decisionPublicSummary').value
     });
     $('reviewPanel').hidden = true; selected = null;
     await loadModeration(); await loadOverview();

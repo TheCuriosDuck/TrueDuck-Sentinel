@@ -116,7 +116,7 @@ def inspect(root: Path = PROJECT):
 def main():
     """Return a nonzero exit code if the preflight finds a blocking error."""
     errors, warnings = inspect()
-    print('TrueDuck Sentinel v0.9.6 — static security preflight')
+    print('TrueDuck Sentinel v0.9.7 — static security preflight')
     for warning in warnings:
         print('REVIEW:', warning)
     for error in errors:

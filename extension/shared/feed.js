@@ -23,7 +23,9 @@
       const value = normalize(item.kind, item.value);
       if (!value || value !== item.value || values.has(item.kind + ':' + value)) throw Error('Invalid or duplicate feed indicator');
       values.add(item.kind + ':' + value);
-      return {kind: item.kind, value, canonical: value, status: 'published', review_state: 'approved'};
+      // The optional summary is public text, never HTML or a private review note.
+      const summary = typeof item.public_summary === 'string' && item.public_summary.length <= 240 ? item.public_summary : '';
+      return {kind: item.kind, value, canonical: value, status: 'published', review_state: 'approved', reason: summary};
     });
   }
   async function readLimitedJson(response) {
@@ -35,7 +37,7 @@
       const {done, value} = await reader.read();
       if (done) break;
       total += value.byteLength;
-      if (total > 700000) { await reader.cancel(); throw Error('Feed too large'); }
+      if (total > 14000000) { await reader.cancel(); throw Error('Feed too large'); }
       chunks.push(value);
     }
     const decoder = new TextDecoder('utf-8', {fatal: true});

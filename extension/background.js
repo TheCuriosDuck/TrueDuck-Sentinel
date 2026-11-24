@@ -31,7 +31,9 @@ function recordsForPage(list) {
     value: record.value,
     canonical: typeof record.canonical === 'string' && record.canonical.length <= 2100 ? record.canonical : '',
     status: ALLOWED_STATUSES.has(record.status) ? record.status : 'reported',
-    review_state: record.review_state === 'approved' ? 'approved' : 'pending'
+    review_state: record.review_state === 'approved' ? 'approved' : 'pending',
+    // Only published summaries may reach page scanners, not private notes.
+    reason: record.status === 'published' && typeof record.reason === 'string' ? record.reason.slice(0, 240) : ''
   }));
 }
 

@@ -71,11 +71,11 @@
         </section>
 
         <section id="moderationScreen" class="screen owner-only" hidden>
-          <div class="page-heading"><div><div class="eyebrow">OWNER WORKSPACE</div><h1>Moderation queue</h1><p>Review reports before allowing any entry into the published threat feed.</p></div></div>
+          <div class="page-heading"><div><div class="eyebrow">OWNER WORKSPACE</div><h1>Moderation queue</h1><p>Review reports before allowing any entry into the published threat feed.</p></div><button id="refreshModeration" class="secondary" type="button">↻ Refresh reports</button></div>
           <div class="panel"><div class="panel-head"><h2>Community submissions</h2><label class="inline-filter">Status <select id="moderationFilter"><option value="pending">Pending</option><option value="all">All</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label></div><div id="moderationList" class="report-cards"></div></div>
           <div id="reviewPanel" class="panel review-panel" hidden>
             <div class="panel-head"><h2>Review selected report</h2><button id="cancelReview" class="small-button" type="button">Close</button></div><div class="selected-record" id="selectedReport"></div>
-            <form id="decisionForm"><div class="field-grid"><div><label for="decisionValue">Decision</label><select id="decisionValue"><option value="approved">Approve</option><option value="rejected">Reject</option><option value="pending">Reopen as pending</option></select></div><div><label for="decisionReference">Evidence reference (required for approval)</label><input id="decisionReference" maxlength="300"></div></div><label for="decisionNote">Reason for decision</label><textarea id="decisionNote" rows="3" maxlength="600" required placeholder="Record why you reached this decision."></textarea><button class="primary" type="submit">Save decision</button></form>
+            <form id="decisionForm"><div class="field-grid"><div><label for="decisionValue">Decision</label><select id="decisionValue"><option value="approved">Approve</option><option value="rejected">Reject</option><option value="pending">Reopen as pending</option></select></div><div><label for="decisionReference">Evidence reference (required for approval)</label><input id="decisionReference" maxlength="300"></div></div><label for="decisionNote">Reason for decision</label><textarea id="decisionNote" rows="3" maxlength="600" required placeholder="Record why you reached this decision."></textarea><label for="decisionPublicSummary">Public review summary (optional, 240 characters)</label><textarea id="decisionPublicSummary" rows="3" maxlength="240" placeholder="Example: Reviewed reports describe requests for gift-card payments."></textarea><p class="micro">Visible to anyone after publication or enabling contact lookup. Do not include names, contact details, private evidence, or unverified accusations. The private reason above is never published automatically.</p><button class="primary" type="submit">Save decision</button></form>
             <p class="micro">Changing a decision retracts any previously published entry. Publishing is a separate owner action.</p>
           </div>
         </section>
@@ -85,7 +85,7 @@
           <div class="panel"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Action</th><th>Note</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table></div></div>
         </section>
       </section>
-      <footer>TRUEDUCK SENTINEL v0.9.6 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
+      <footer>TRUEDUCK SENTINEL v0.9.7 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
     </section>
   </main>
 <footer class="console-footer">community · TrueDuck Sentinel | Educational scam awareness and fraud guidance only. No promise of threat detection or recovery.</footer>

@@ -43,6 +43,9 @@
       : result.assessment === 'external'
       ? 'An exact URL on this page or in its links appears in an imported URLhaus malware feed. Check the source and context before drawing conclusions.'
       : `${result.matches.length} watchlist entry(s) found on this page or its links. A match alone does not prove this site is fraudulent.`;
+    // Display only the explicitly public summary of a matching published indicator.
+    const summary = result.matches.find(x => x.status === 'published' && x.reason)?.reason;
+    if (summary) detail.textContent += ` Public review: ${summary}`;
     const foot = document.createElement('div');
     foot.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;color:#b3c4df';
     const note = document.createElement('span'); note.textContent = 'Open TrueDuck Sentinel for details';

@@ -42,9 +42,15 @@ Only administrators have accounts. Public signup is disabled; old reporter accou
 py -3.12 -m cloud_api.manage_owner
 ```
 
-The extension's **Settings** page can connect to the localhost APIs. Manual public-feed sync accepts a user-approved HTTPS endpoint ending in `/v1/feed`, or the local development URL `http://127.0.0.1:8877/v1/feed`. Grant network permission only to an API you trust. The popup’s **Report a scam anonymously** opens that service’s `/report` page. If no service is configured, open the local report URL directly while testing.
+The extension's **Settings** page can connect to the localhost APIs. Manual public-feed sync accepts a user-approved HTTPS endpoint ending in `/v1/feed`, or the local development URL `http://127.0.0.1:8877/v1/feed`. Grant network permission only to an API you trust. The popup’s **Report a scam anonymously** opens that service’s `/report` page. If no service is configured, the popup offers to open the localhost test form. Submit the form and wait for the receipt; merely opening the form does not submit it. In the admin console, choose **Moderation → Refresh reports**, with the filter set to Pending or All. Private indicators added in extension Settings remain in the separate local database and do not appear in the community queue. Re-submit old fictional test indicators via the anonymous form if needed.
 
 Anonymous reports are private and pending until an administrator reviews them. Approval and publishing are separate actions. There is no public report history or account creation. Pending duplicates are merged without revealing queue membership. The local API limits intake to 10 attempts per socket IP per day and 200 per hour globally, in memory. These limits reset on restart and are not production-grade. Report records do not store visitor account details or IPs; the server/hosting access logs may still record IPs.
+
+## Public review summaries (v0.9.7)
+
+In Moderation, click **Review**, select Approve, add an evidence reference and private review reason, then enter a separate **Public review summary** (up to 240 characters). Do not include personal information, private evidence, or unsupported claims. Save the decision. For domains/URLs, click **Publish indicator** and sync the extension feed. The popup and webpage warning show the public summary when a published entry matches. For emails/phones, click **Enable contact lookup** and then use the popup lookup. The public API returns the summary only for an exact opted-in approved contact. Physical addresses remain private. Previously published reports have no public summary until re-reviewed and explicitly republished. Re-review or retraction removes publication; downloaded website records change on the next successful sync. Cached copies may persist until then.
+
+For an upgrade, stop both servers, back up both data directories, and keep `backend/data` and `cloud_api/data` when replacing source files. Existing databases gain the separate summary table automatically on startup; no data migration or new admin account is required if you use the same database. Restart `RUN_LOCAL.cmd`, hard-refresh the dashboard, reload the Edge extension, and sync `http://127.0.0.1:8877/v1/feed` in Settings.
 
 ## Checks
 

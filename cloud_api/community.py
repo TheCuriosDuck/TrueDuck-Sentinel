@@ -101,7 +101,15 @@ public_contact_lookup = Table(
     Column('created_at', String(32), nullable=False),
 )
 
-# Add the v0.9.3 lookup table without rewriting any existing report data.
+# Keep public-facing explanations separate from confidential moderator notes.
+# A new table upgrades existing databases without dropping or altering old rows.
+public_review_summaries = Table(
+    'community_public_review_summaries', metadata,
+    Column('report_id', Integer, ForeignKey('community_reports.id'), primary_key=True),
+    Column('summary', String(240), nullable=False),
+)
+
+# Create missing tables without rewriting existing report data.
 metadata.create_all(engine)
 
 # An in-process throttle blocks repeated requests during local development.
@@ -432,9 +440,12 @@ def moderation_queue(request: Request):
             reports.c.id.desc()).limit(200)).mappings().all()
         published_ids = {row[0] for row in connection.execute(select(community_public_table.c.report_id)).all()}
         lookup_ids = {row[0] for row in connection.execute(select(public_contact_lookup.c.report_id)).all()}
+        summaries = dict(connection.execute(select(public_review_summaries.c.report_id,
+                                                  public_review_summaries.c.summary)).all())
     return {'records': [{**report_view(row), 'reporter_id': row['reporter_id'],
                          'published': row['id'] in published_ids,
-                         'lookup_visible': row['id'] in lookup_ids} for row in rows]}
+                         'lookup_visible': row['id'] in lookup_ids,
+                         'public_summary': summaries.get(row['id'], '')} for row in rows]}
 
 
 @router.post('/v1/admin/reports/{report_id}/decision')
@@ -445,6 +456,8 @@ async def review_report(report_id: int, request: Request):
     decision = field(data, 'decision', 12, True)
     reason = field(data, 'note', 600, True)
     reference = field(data, 'reference', 300)
+    # Only the moderator-written public summary can leave the private queue.
+    summary = field(data, 'public_summary', 240)
     if decision not in VALID_DECISIONS:
         raise HTTPException(status_code=422, detail='Choose pending, approved, or rejected')
     if decision == 'approved' and len(reference) < 4:
@@ -463,6 +476,12 @@ async def review_report(report_id: int, request: Request):
         connection.execute(update(reports).where(reports.c.id == report_id).values(
             status=decision, review_note=reason, review_reference=reference,
             updated_at=now_utc()))
+        # Re-review replaces the proposed public explanation and revokes publication.
+        connection.execute(delete(public_review_summaries).where(
+            public_review_summaries.c.report_id == report_id))
+        if decision == 'approved' and summary:
+            connection.execute(insert(public_review_summaries).values(
+                report_id=report_id, summary=summary))
         audit_event(connection, report_id, user['id'], decision, reason, reference)
     return {'id': report_id, 'status': decision, 'published': False}
 
@@ -521,7 +540,7 @@ async def owner_contact_lookup_access(report_id: int, request: Request):
 
     This separate action is NEVER implicit when a reporter submits or when an
     administrator approves a report. The ordinary feed still excludes contact
-    indicators. Public lookup responses disclose only a yes/no match.
+    indicators. Public lookup responses disclose a match and an explicitly prepared public summary.
     """
     owner = get_user(request, owner_only=True)
     payload = await json_input(request, max_size=200)
@@ -564,14 +583,18 @@ async def public_contact_lookup_endpoint(request: Request):
     value = normalize_indicator(kind, data.get('value'))
     # Parameterized exact-match query; only explicitly opted-in APPROVED rows.
     with engine.connect() as connection:
-        found = connection.execute(select(reports.c.id).join(
+        # Join only opted-in approved records; never select raw report text or evidence.
+        match = connection.execute(select(reports.c.id, public_review_summaries.c.summary).join(
             public_contact_lookup, public_contact_lookup.c.report_id == reports.c.id
+        ).outerjoin(public_review_summaries, public_review_summaries.c.report_id == reports.c.id
         ).where(and_(reports.c.kind == kind, reports.c.value == value,
-                     reports.c.status == 'approved')).limit(1)).first() is not None
+                     reports.c.status == 'approved')).order_by(reports.c.id.desc()).limit(1)).first()
+        found = match is not None
     # Do not echo email, phone, evidence, reporter, or database IDs.
     return Response(
         content=json.dumps({'match': found, 'classification': 'reviewed_report' if found else 'none',
                             'scope': 'owner_opt_in_only',
+                            'public_summary': (match.summary or '') if found else '',
                             'note': 'A match is a reviewed report, not proof of fraud. No match does not mean safe.'}),
         media_type='application/json',
         headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',

@@ -22,6 +22,7 @@ class CommunityApiTests(unittest.TestCase):
         with core.engine.begin() as conn:
             conn.execute(delete(core.community_public_table))
             conn.execute(delete(c.public_contact_lookup))
+            conn.execute(delete(c.public_review_summaries))
             conn.execute(delete(c.review_audit))
             conn.execute(delete(c.reports))
             conn.execute(delete(c.sessions))
@@ -199,6 +200,53 @@ class CommunityApiTests(unittest.TestCase):
             'kind': 'address', 'value': '123 Example Road'}).status_code, 422)
         self.assertEqual(self.client.post('/v1/lookup', json={
             'kind': 'email', 'value': 'not_an_email'}).status_code, 422)
+
+    def test_public_review_summary_requires_publication_and_is_retracted(self):
+        # An anonymous report appears in the admin queue but not the public feed.
+        report_id = self.submitted_id('domain', 'summary.example.test')
+        path = f'/v1/admin/reports/{report_id}'
+        summary = 'Reviewed evidence describes requests for gift-card payments.'
+        decision = {'decision': 'approved', 'note': 'Confidential review note',
+                    'reference': 'PRIVATE-REF', 'public_summary': summary}
+        self.assertEqual(self.client.post(path + '/decision', headers=self.owner_headers, json=decision).status_code, 200)
+        self.assertNotIn(summary, self.client.get('/v1/feed').text)
+        self.assertEqual(self.client.post(path + '/publish', headers=self.owner_headers).status_code, 200)
+        feed = self.client.get('/v1/feed').json()
+        row = next(x for x in feed['indicators'] if x['value'] == 'summary.example.test')
+        self.assertEqual(row['public_summary'], summary)
+        for private in ('Confidential review note', 'PRIVATE-REF', 'REF-100', 'Suspicious request'):
+            self.assertNotIn(private, str(feed))
+        self.assertEqual(self.client.post(path + '/retract', headers=self.owner_headers).status_code, 200)
+        self.assertNotIn(summary, self.client.get('/v1/feed').text)
+
+    def test_contact_public_summary_opt_in_and_re_review(self):
+        # The raw report and review note never become part of an exact lookup.
+        contact = 'summary@example.test'
+        report_id = self.submitted_id('email', contact)
+        path = f'/v1/admin/reports/{report_id}'
+        lookup = lambda: self.client.post('/v1/lookup', json={'kind': 'email', 'value': contact}).json()
+        summary = 'Reviewed reports describe a fake invoice request.'
+        decision = {'decision': 'approved', 'note': 'Private review note',
+                    'reference': 'PRIVATE-REF', 'public_summary': summary}
+        self.assertFalse(lookup()['match'])
+        self.assertEqual(self.client.post(path + '/decision', headers=self.owner_headers, json=decision).status_code, 200)
+        self.assertEqual(lookup()['public_summary'], '')
+        self.assertEqual(self.client.post(path + '/lookup-access', headers=self.owner_headers, json={'enabled': True}).status_code, 200)
+        result = lookup()
+        self.assertTrue(result['match'])
+        self.assertEqual(result['public_summary'], summary)
+        for private in (contact, 'Private review note', 'PRIVATE-REF', 'REF-100', 'Suspicious request'):
+            self.assertNotIn(private, str(result))
+        self.assertNotIn(summary, self.client.get('/v1/feed').text)
+        self.assertEqual(self.client.post(path + '/decision', headers=self.owner_headers, json={**decision, 'decision':'rejected'}).status_code, 200)
+        self.assertFalse(lookup()['match'])
+        self.assertEqual(lookup()['public_summary'], '')
+
+    def test_summary_is_bounded(self):
+        report_id = self.submitted_id()
+        response = self.client.post(f'/v1/admin/reports/{report_id}/decision', headers=self.owner_headers,
+            json={'decision':'approved','note':'review','reference':'CASE-1','public_summary':'x'*241})
+        self.assertEqual(response.status_code, 422)
 
     def test_anonymous_lookup_is_rate_limited(self):
         responses = [self.client.post('/v1/lookup', json={
