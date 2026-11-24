@@ -70,7 +70,7 @@ Contributions, bug reports, and improvements are welcome. For security vulnerabi
 - [Sources and acknowledgments](SOURCES.md) — research references, technologies, and AI usage disclosure.
 - [License](LICENSE) — open-source licensing terms.
 
-OpenAI's ChatGPT was used substantially to assist with architecture, code generation, debugging, security guidance, documentation, and automated testing. The maintainer directed the requirements, tested builds, and guided revisions. Independent review is encouraged.
+OpenAI's ChatGPT was used to assist with architecture, code generation, debugging, security guidance, documentation, and automated testing. The maintainer directed the requirements, tested builds, and guided revisions. Independent review is encouraged.
 
 ---
 
