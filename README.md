@@ -1,55 +1,77 @@
-# TrueDuck Sentinel (Beta)
+# TrueDuck Sentinel
 
-Open-source browser scam awareness, anonymous reports, and administrator-reviewed intelligence. No account is needed to use the extension. Local suspicious-language warnings are available without a server; reviewed website and contact matches require a configured intelligence API.
+**v0.9.8 Beta · Free and open source · No account required**
 
-## Install and run
+TrueDuck Sentinel is a browser extension for Microsoft Edge that helps users identify potential scams, check suspicious contact information, and report suspicious activity. It combines local detection rules with administrator-reviewed community intelligence when connected to a compatible service.
 
-1. Stop both old Python servers with Ctrl+C. Back up `cloud_api/data` and `backend/data` outside the repository. Preserve both data folders and `.git` when updating source files.
-2. From the project root, install dependencies: `py -3.12 -m pip install -r cloud_api\requirements.txt`.
-3. Run `RUN_LOCAL.cmd`. It now starts **only the community API** on port 8877. The private 8765 server is retired; its old database remains on disk for reference.
-4. If you already have an admin in `cloud_api/data/cloud-dev.db`, keep using it. Otherwise run `py -3.12 -m cloud_api.manage_owner` in the project root.
-5. Open `edge://extensions` and reload TrueDuck Sentinel, or select **Load unpacked** and choose `extension`.
-6. In extension Settings, enter `http://127.0.0.1:8877/v1/feed` and click **Sync published feed**. No admin token is needed. The upgrade discards old extension private records and clears the previously downloaded public cache; re-sync to get the current approved feed. Only configure an API you trust.
+## Features
 
-## One report queue, one Admin Center (v0.9.8)
+- **Automatic website warnings:** Checks visible webpage content for common scam tactics and matching published website indicators.
+- **Email and phone lookup:** Checks email addresses and US/Canada phone numbers for reviewed reports.
+- **Quick Check:** Paste a suspicious message, link, email address, or phone number for analysis.
+- **Anonymous reporting:** Submit suspicious indicators without creating an account.
+- **Reviewed intelligence:** Public matches can include a review summary explaining why the indicator was flagged.
+- **Privacy controls:** Customize scanning sensitivity, pause scanning on selected websites, and optionally keep a local alert history.
 
-- Users click **Report a scam anonymously**, complete the form and submit. Reports are stored in `cloud_api/data/cloud-dev.db` and start pending. Public users cannot review, publish, retract, enable contact lookup or read private reports.
-- Administrator: open `http://127.0.0.1:8877/dashboard`, sign in, choose **Moderation**, and refresh. Review evidence and record your decision. To expose an approved domain or URL, click **Publish indicator**. To make an approved email or phone searchable, click **Enable contact lookup**. Public review summaries are optional and must not contain personal details, raw evidence or unsupported claims.
-- The extension only downloads public approved domain/URL records. Exact email and phone lookup is performed on demand by the community API. Physical addresses remain private. Re-review and retraction remove publication; website warnings update after the next successful feed sync. Suspicious-language warnings are independent of the review queue and are not claims of verified fraud.
-- There is no longer a private local database management section, administrator token or local review queue in the extension. The old bulk publishing endpoint returns HTTP 410, even for old publisher credentials. Legacy private records and old bulk feed rows are retained for reference but no longer distributed. If you want a legacy indicator reviewed, submit it through the anonymous report form and review it in the Admin Center. No automatic migration or deletion of the old database is performed. The legacy `backend/` files remain for archive compatibility and tests; the private server cannot be started through its old direct command.
+## Installation
 
-## Test locally
+TrueDuck Sentinel is currently a Beta developer preview. To install it manually in Microsoft Edge:
 
-Health: `http://127.0.0.1:8877/health`. Reporting: `http://127.0.0.1:8877/report`. Admin: `http://127.0.0.1:8877/dashboard`.
+1. Download the project from the repository's **Releases** page or select **Code → Download ZIP**.
+2. Extract the downloaded ZIP.
+3. Open Microsoft Edge and enter `edge://extensions` in the address bar.
+4. Enable **Developer mode** and select **Load unpacked**.
+5. Select the `extension` folder containing `manifest.json`.
+6. Open TrueDuck Sentinel from the Extensions menu. Pin it to your toolbar if desired.
 
-Submit `alerts@example.test` anonymously with a fictional description. Before approval and explicit contact lookup access, the email must not return a reviewed match. Open the Admin Center, approve with a fictional reference and a public summary, then enable contact lookup. Look it up again in the extension: the summary should appear. Retract the report and repeat the lookup: it should no longer match. Repeat for `test-scam.example.test` as a domain, publishing it and syncing the feed before testing Quick Check. Do not navigate to real malicious websites.
+No account or Python installation is required for local detection.
 
-The public intake has basic in-memory rate limits and duplicate detection. Server or hosting logs may record IP addresses. This is not production-grade abuse protection.
+## How to use
 
-## Checks
+### Browse normally
 
-```powershell
-py -3.12 security_check.py
-py -3.12 -m unittest discover -s tests -p "test_*.py"
-```
+When automatic scanning is enabled, TrueDuck Sentinel checks supported webpages as you browse and displays a dismissible warning when suspicious patterns or published indicators match.
 
-With Node installed, run JS tests via `node tests/detector.test.js`, `node tests/feed.test.js`, `node tests/lookup.test.js`.
+### Look up an email or phone number
 
-## License and project name
+Open the extension, select **Email address** or **Phone number (US / Canada)**, enter the contact information, and click **Look up indicator**. If a reviewed, searchable record matches, its public review summary is displayed when available.
 
-**The Unlicense:** to the extent contributors have the rights to release their contributions, the original code is dedicated to the public domain where possible, with a permissive fallback. Anyone may copy, modify, distribute, and use it commercially, without attribution. The software is supplied as-is.
+### Check a suspicious message
 
-**No project trademark is asserted.** The project name is intended for free community use; this statement grants no rights held by third parties. However, a source-code license cannot stop all third-party trademark claims or guarantee exclusive rights will never arise. No participant is authorized to claim they represent all contributors without permission. See the `LICENSE` file.
+Paste a message or link into **Quick Check** and click **Check text**. The extension will identify matching indicators and common suspicious-language patterns.
 
-TrueDuck Sentinel is the project name; no personal author, company publisher, or company API is specified in this release. The name is not trademark-cleared and does not imply endorsement by any company. The project's use of old internal identifiers such as `SCAMLENS_` or `scamlens.public-feed.v1` is only for backward protocol compatibility.
+### Report a scam
 
-## Privacy and release limitations
+Select **Report a scam anonymously**, enter the suspicious information and a description, and submit the report. Reports remain private until an administrator reviews them and explicitly enables public access. Submitting a report does not automatically trigger a public warning.
 
-- This is a **developer Beta**, not a fully audited security product. Warnings are not proof of fraud; absence of a warning does not mean safe.
-- Scanning of permitted webpage content occurs locally. Optional scan history is off by default.
-- Manual contact lookup can send the entered email or phone number to the **user-configured** API only after the user clicks **Look up**. Do not connect a service that you don't trust.
-- Content-script permissions are broad because automatic warnings work on ordinary websites; consider an on-demand edition for more restricted access.
-- **Never commit** `backend/data` (legacy archive), `cloud_api/data`, `.env`, tokens, API credentials, database backups, or real users' reports. `.gitignore` and `.dockerignore` help but don't replace manual review.
-- This code is not ready for public hosting: HTTPS, production authentication, privacy notice, rate limiting, ongoing maintenance, and independent review are still required.
-- Imported threat feeds may have their **own licenses and terms**, separate from this repository's license.
-- Removing authorship from files does not erase Git commit authors, account ownership, or previously published history. If anonymity is important, create a new neutral repository and review its metadata before making it public.
+## Beta availability
+
+Local suspicious-language detection works without a server. Shared website intelligence, live contact lookups, and anonymous reporting require a trusted, compatible intelligence service configured in **Settings → Public intelligence feed (optional)**. No central hosted service is configured by default in this release.
+
+A missing report, unavailable service, or absence of a warning does not mean a website or contact is safe.
+
+## Privacy and security
+
+Automatic webpage analysis runs locally. Manual contact lookups send the entered value to the configured service when requested. Reports send the information you choose to submit; server access logs may record IP addresses. No user account is required. Optional alert history is stored locally and is disabled by default.
+
+The extension requires webpage access to provide automatic scanning. You can disable scanning or pause it on selected sites in Settings. Only connect to intelligence services you trust.
+
+This is experimental software and has not undergone an independent security audit. It is not a replacement for established security software or independent verification.
+
+## Open source
+
+TrueDuck Sentinel is released under [The Unlicense](LICENSE) for original code that contributors have the rights to release. You are free to use, copy, modify, and redistribute that code, including commercially, without attribution. Third-party software and data remain subject to their own terms. No exclusive project trademark rights are asserted; this does not prevent third-party trademark claims.
+
+Contributions, bug reports, and improvements are welcome. For security vulnerability reporting, see [SECURITY.md](SECURITY.md).
+
+## Project resources
+
+- [Development and administration guide](DEVELOPMENT.md) — server setup, report moderation, and testing.
+- [Sources and acknowledgments](SOURCES.md) — research references, technologies, and AI usage disclosure.
+- [License](LICENSE) — open-source licensing terms.
+
+OpenAI's ChatGPT was used substantially to assist with architecture, code generation, debugging, security guidance, documentation, and automated testing. The maintainer directed the requirements, tested builds, and guided revisions. Independent review is encouraged.
+
+---
+
+**Disclaimer:** TrueDuck Sentinel provides educational scam awareness and advisory warnings. A report or match is not proof of fraud, and the absence of a warning does not establish safety. The software is provided as-is, without warranty.
