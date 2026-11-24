@@ -4,11 +4,12 @@
  */
 'use strict';
 const $ = id => document.getElementById(id);
-let token = sessionStorage.getItem('scamlensCommunitySession') || '';
+const publicReport = location.pathname === '/report';
+let token = publicReport ? '' : (sessionStorage.getItem('scamlensCommunitySession') || '');
 let profile = null;
 let queue = [];
 let selected = null;
-const SCREENS = ['overview', 'submit', 'my-reports', 'moderation', 'audit'];
+const SCREENS = ['overview', 'submit', 'moderation', 'audit'];
 
 function showToast(message, error = false) {
   const node = $('toast');
@@ -47,14 +48,13 @@ async function api(path, method = 'GET', body) {
 }
 function openScreen(name) {
   if (!SCREENS.includes(name)) return;
-  if (!profile) return;
+  if (!profile && !(publicReport && name === 'submit')) return;
   if (['moderation', 'audit'].includes(name) && profile.role !== 'owner') return;
   for (const key of SCREENS) $(key + 'Screen').hidden = key !== name;
   document.querySelectorAll('[data-screen]').forEach(node => {
     node.classList.toggle('active', node.dataset.screen === name);
   });
   clearToast();
-  if (name === 'my-reports') loadMine();
   if (name === 'moderation') loadModeration();
   if (name === 'audit') loadAudit();
   if (name === 'overview') loadOverview();
@@ -63,6 +63,7 @@ function displaySession(user) {
   profile = user;
   $('authScreen').hidden = true;
   $('workspace').hidden = false;
+  $('sidebar').hidden = false;
   $('logoutButton').hidden = false;
   $('userLabel').textContent = `${user.username} · ${user.role}`;
   document.querySelectorAll('.owner-only').forEach(node => {
@@ -87,6 +88,7 @@ function signOut(callApi = true) {
   sessionStorage.removeItem('scamlensCommunitySession');
   $('authScreen').hidden = false;
   $('workspace').hidden = true;
+  $('sidebar').hidden = true;
   $('logoutButton').hidden = true;
   $('userLabel').textContent = '';
   $('loginPass').value = '';
@@ -118,20 +120,6 @@ function drawBars(id, items) {
     row.append(element('span', item.name), track, element('span', item.count, 'bar-value'));
     root.append(row);
   }
-}
-async function loadMine() {
-  try {
-    const data = await api('/v1/reports');
-    const body = $('myReportsBody'); body.replaceChildren();
-    if (!data.records.length) {
-      const tr = element('tr'); const td = element('td', 'No submissions yet.'); td.colSpan = 3; tr.append(td); body.append(tr); return;
-    }
-    for (const report of data.records) {
-      const tr = element('tr'); const status = element('td'); status.append(statusNode(report.status));
-      tr.append(element('td', `${report.kind}: ${report.value}`), status, element('td', report.created_at.slice(0, 16)));
-      body.append(tr);
-    }
-  } catch (error) { showToast(error.message, true); }
 }
 async function loadModeration() {
   if (profile?.role !== 'owner') return;
@@ -227,26 +215,20 @@ $('loginForm').addEventListener('submit', async event => {
     displaySession(result.user);
   } catch (error) { showToast(error.message, true); }
 });
-$('registerForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  try {
-    await api('/v1/auth/register', 'POST', {username: $('registerUser').value, password: $('registerPass').value});
-    $('loginUser').value = $('registerUser').value;
-    $('registerPass').value = '';
-    showToast('Reporter account created. Sign in with the username and password you chose.');
-  } catch (error) { showToast(error.message, true); }
-});
 $('reportForm').addEventListener('submit', async event => {
   event.preventDefault();
+  const submitButton = $('reportForm').querySelector('button[type=submit]');
+  if (submitButton.disabled) return;
+  submitButton.disabled = true;
   try {
-    const result = await api('/v1/reports', 'POST', {
+    await api('/v1/reports', 'POST', {
       kind: $('reportKind').value, value: $('reportValue').value,
       details: $('reportDetails').value, evidence_ref: $('reportEvidence').value
     });
     $('reportForm').reset();
-    openScreen('my-reports');
-    showToast(`Report #${result.id} submitted for review. It has not been published.`);
+    showToast('Report received for review. It has not been published. Duplicate pending reports may be merged.');
   } catch (error) { showToast(error.message, true); }
+  finally { submitButton.disabled = false; }
 });
 $('decisionForm').addEventListener('submit', async event => {
   event.preventDefault();
@@ -262,6 +244,19 @@ $('decisionForm').addEventListener('submit', async event => {
   } catch (error) { showToast(error.message, true); }
 });
 (async () => {
+  if (publicReport) {
+    $('workspace').hidden = false;
+    openScreen('submit');
+    // Fragment is local to the browser and never part of the initial HTTP request.
+    const host = new URLSearchParams(location.hash.slice(1)).get('domain');
+    if (host && host.length <= 253 && /^(?:[a-z0-9-]+\.)+[a-z0-9-]+$/i.test(host)) {
+      $('reportKind').value = 'domain';
+      $('reportValue').value = host;
+      history.replaceState(null, '', '/report');
+    }
+    return;
+  }
+  $('authScreen').hidden = false;
   if (!token) return;
   try { displaySession(await api('/v1/auth/me')); }
   catch { signOut(false); }

@@ -1,6 +1,6 @@
 """Create the first TrueDuck Sentinel owner account without using a public HTTP route.
 
-From the project root on Windows, run CREATE_OWNER.cmd. The program uses
+From the project root on Windows, run py -3.12 -m cloud_api.manage_owner. The program uses
 getpass so the password does not appear on the command line or screen.
 """
 

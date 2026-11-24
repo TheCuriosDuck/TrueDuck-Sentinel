@@ -20,13 +20,13 @@ def start():
             TOKEN_FILE.chmod(0o600)
         except OSError:
             pass
-    # Only the local demo enables reporter self-registration.
-    # Hosted systems should leave registration disabled until abuse controls are deployed.
-    os.environ.setdefault('SCAMLENS_ALLOW_SIGNUP', '1')
+    # Public account registration is disabled in every mode.
+    os.environ['SCAMLENS_ALLOW_SIGNUP'] = '0'
     os.environ['SCAMLENS_PUBLISH_TOKEN'] = TOKEN_FILE.read_text(encoding='utf-8').strip()
     print('TrueDuck Sentinel cloud demo API: http://127.0.0.1:8877/health')
     print('Public feed: http://127.0.0.1:8877/v1/feed')
-    print('Community console: http://127.0.0.1:8877/dashboard')
+    print('Anonymous report form: http://127.0.0.1:8877/report')
+    print('Administrator console: http://127.0.0.1:8877/dashboard')
     print('The separate publisher token is saved in cloud_api/data (do not share it).')
     uvicorn.run('cloud_api.app:app', host='127.0.0.1', port=8877, log_level='info')
 

@@ -109,8 +109,8 @@ class CloudApiTests(unittest.TestCase):
         response = self.client.put('/v1/admin/feed', headers={**self.headers, 'Content-Type':'application/json'}, content=b'a'*700_001)
         self.assertEqual(response.status_code, 413)
 
-    def test_no_public_write_route(self):
-        self.assertEqual(self.client.post('/v1/reports', json={'kind':'domain','value':'test.example'}).status_code, 401)
+    def test_no_public_publishing_route(self):
+        self.assertEqual(self.client.post('/v1/reports', json={'kind':'domain','value':'test.example'}).status_code, 422)
         self.assertEqual(self.client.post('/v1/admin/feed', headers=self.headers).status_code, 405)
 
 

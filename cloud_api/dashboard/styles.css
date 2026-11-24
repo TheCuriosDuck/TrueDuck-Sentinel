@@ -7,3 +7,5 @@
 .brand b{color:#101f38}
 
 .console-footer{padding:14px 26px;text-align:center;background:#eff4fa;color:#697e96;font-size:11px;line-height:1.5}.console-footer a{color:#1d70bd;text-decoration:none}
+
+.layout:has(> .sidebar[hidden]){grid-template-columns:minmax(0,1fr)}

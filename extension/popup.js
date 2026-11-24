@@ -159,7 +159,7 @@ async function lookupIndicator() {
     }
   } catch {
     save(local.match ? 'Online lookup unavailable' : 'Unable to verify online',
-      'Your local check completed, but the Open Scam lookup service was unreachable. No online reputation result was returned.', 'caution');
+      'Your local check completed, but the Sentinel lookup service was unreachable. No online reputation result was returned.', 'caution');
   } finally { byId('lookupButton').disabled = false; }
 }
 async function main() {
@@ -204,8 +204,20 @@ async function openCommunitySite() {
     const url = new URL(tab?.url || '');
     if (['http:', 'https:'].includes(url.protocol)) host = url.hostname;
   } catch { /* A browser-internal tab has no reportable hostname. */ }
-  const consoleUrl = 'http://127.0.0.1:8877/dashboard' +
-    (host ? '?domain=' + encodeURIComponent(host) : '');
+  // Use only the selected feed service; do not send the hostname to a default server.
+  const saved = await chrome.storage.local.get('publicFeedUrl');
+  let origin;
+  try {
+    const url = new URL(saved.publicFeedUrl || '');
+    if (url.pathname !== '/v1/feed' || url.username || url.password || url.search || url.hash ||
+        !(url.protocol === 'https:' || (url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '8877'))) throw Error();
+    origin = url.origin;
+  } catch {
+    byId('siteMessage').textContent = 'Set a trusted reporting API in Settings (Published intelligence feed) first.';
+    return;
+  }
+  const consoleUrl = origin + '/report' +
+    (host ? '#domain=' + encodeURIComponent(host) : '');
   await chrome.tabs.create({url: consoleUrl});
 }
 byId('communitySiteButton').addEventListener('click', openCommunitySite);

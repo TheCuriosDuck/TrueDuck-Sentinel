@@ -13,12 +13,11 @@
     <div class="masthead-right"><span class="env"><span class="env-dot"></span> LOCAL DEVELOPMENT</span><span id="userLabel" class="user-label"></span><button type="button" id="logoutButton" class="small-button" hidden>Sign out</button></div>
   </header>
   <main class="layout">
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar" hidden>
       <div class="sidebar-caption">WORKSPACE</div>
       <nav aria-label="Workspace navigation">
         <button type="button" class="nav-item active" data-screen="overview">▦ <span>Overview</span></button>
         <button type="button" class="nav-item" data-screen="submit">⊕ <span>Submit report</span></button>
-        <button type="button" class="nav-item" data-screen="my-reports">▤ <span>My reports</span></button>
         <button type="button" class="nav-item owner-only" data-screen="moderation" hidden>◫ <span>Moderation</span><span id="navPending" class="nav-count">0</span></button>
         <button type="button" class="nav-item owner-only" data-screen="audit" hidden>◷ <span>Audit history</span></button>
       </nav>
@@ -27,9 +26,9 @@
     <section class="content">
       <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
 
-      <section id="authScreen" class="auth-screen">
-        <div class="eyebrow">ACCOUNT ACCESS</div><h1>Sign in to the community console</h1>
-        <p class="muted intro">Manage your own reports or moderate the community review queue.</p>
+      <section id="authScreen" class="auth-screen" hidden>
+        <div class="eyebrow">ACCOUNT ACCESS</div><h1>Administrator sign in</h1>
+        <p class="muted intro">Review and moderate anonymous reports. Visitors do not need accounts.</p>
         <div class="auth-grid">
           <form id="loginForm" class="panel form-panel">
             <h2>Sign in</h2>
@@ -38,14 +37,7 @@
             <button class="primary" type="submit">Sign in securely</button>
             <p class="micro">Sessions expire after eight hours. Don't reuse another account password.</p>
           </form>
-          <form id="registerForm" class="panel form-panel">
-            <h2>Reporter's account</h2>
-            <p class="muted">For local testing. A username is enough; no email address is required.</p>
-            <label for="registerUser">Choose a username</label><input id="registerUser" autocomplete="username" required minlength="3" maxlength="32" placeholder="sampletester">
-            <label for="registerPass">Choose a password</label><input id="registerPass" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="12 or more characters">
-            <button class="secondary" type="submit">Create reporter account</button>
-            <p class="micro">Public registration is disabled by default outside the local demo.</p>
-          </form>
+          <div class="panel form-panel"><h2>Submitting a report?</h2><p>No account or login is required.</p><p><a href="/report">Open anonymous reporting</a></p><p class="micro">Administrator accounts are created locally by the server operator.</p></div>
         </div>
       </section>
 
@@ -68,19 +60,14 @@
         </section>
 
         <section id="submitScreen" class="screen" hidden>
-          <div class="page-heading"><div><div class="eyebrow">COMMUNITY INTAKE</div><h1>Submit a suspicious indicator</h1><p>Describe what you observed. Only submit material you have a legitimate reason to share.</p></div></div>
+          <div class="page-heading"><div><div class="eyebrow">COMMUNITY INTAKE</div><h1>Submit a suspicious indicator</h1><p>No account needed. Describe what you observed. Only submit material you have a legitimate reason to share.</p></div></div>
           <form id="reportForm" class="panel report-form">
             <div class="field-grid"><div><label for="reportKind">Indicator type</label><select id="reportKind" required><option value="domain">Domain</option><option value="url">URL</option><option value="email">Email address</option><option value="phone">Phone number (US/Canada)</option><option value="address">Physical address</option></select></div><div><label for="reportValue">Indicator</label><input id="reportValue" required maxlength="500" placeholder="example.test"></div></div>
             <label for="reportDetails">What happened?</label><textarea id="reportDetails" required maxlength="600" rows="5" placeholder="Describe the message or suspicious behavior without sharing passwords, account numbers, or private messages."></textarea>
             <label for="reportEvidence">Evidence reference (optional)</label><input id="reportEvidence" maxlength="300" placeholder="Case number, source reference, or public article identifier">
-            <p class="micro">For URLs, remove query strings and fragments because they can contain private tokens. Evidence references are never fetched automatically.</p>
+            <p class="micro">Reports are private until reviewed. Do not include identifying details about yourself, passwords or private messages. Server or hosting logs may record connection IPs. For URLs, remove queries and fragments. Evidence references are never fetched automatically.</p>
             <button class="primary" type="submit">Submit to review queue</button>
           </form>
-        </section>
-
-        <section id="my-reportsScreen" class="screen" hidden>
-          <div class="page-heading"><div><div class="eyebrow">REPORT HISTORY</div><h1>My submissions</h1><p>See the status of reports you've submitted.</p></div></div>
-          <div class="panel"><div class="table-wrap"><table><thead><tr><th>Indicator</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myReportsBody"></tbody></table></div></div>
         </section>
 
         <section id="moderationScreen" class="screen owner-only" hidden>
@@ -98,7 +85,7 @@
           <div class="panel"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Action</th><th>Note</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table></div></div>
         </section>
       </section>
-      <footer>TRUEDUCK SENTINEL v0.9.5 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
+      <footer>TRUEDUCK SENTINEL v0.9.6 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
     </section>
   </main>
 <footer class="console-footer">community · TrueDuck Sentinel | Educational scam awareness and fraud guidance only. No promise of threat detection or recovery.</footer>

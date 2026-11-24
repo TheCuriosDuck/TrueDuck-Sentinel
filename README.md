@@ -34,15 +34,17 @@ Start the community API in a **second** terminal:
 py -3.12 -m cloud_api.dev_server
 ```
 
-Health check: `http://127.0.0.1:8877/health`  |  Admin console: `http://127.0.0.1:8877/dashboard`.
+Health check: `http://127.0.0.1:8877/health`  |  Admin console: `http://127.0.0.1:8877/dashboard` | Anonymous report form: `http://127.0.0.1:8877/report`.
 
-To create the first administrator account:
+Only administrators have accounts. Public signup is disabled; old reporter accounts cannot sign in. To create the first administrator account (skip if you already have one in the same database):
 
 ```powershell
 py -3.12 -m cloud_api.manage_owner
 ```
 
-The extension's **Settings** page can connect to the localhost APIs. Manual public-feed sync accepts a user-approved HTTPS endpoint ending in `/v1/feed`, or the local development URL `http://127.0.0.1:8877/v1/feed`. Grant network permission only to an API you trust.
+The extension's **Settings** page can connect to the localhost APIs. Manual public-feed sync accepts a user-approved HTTPS endpoint ending in `/v1/feed`, or the local development URL `http://127.0.0.1:8877/v1/feed`. Grant network permission only to an API you trust. The popup’s **Report a scam anonymously** opens that service’s `/report` page. If no service is configured, open the local report URL directly while testing.
+
+Anonymous reports are private and pending until an administrator reviews them. Approval and publishing are separate actions. There is no public report history or account creation. Pending duplicates are merged without revealing queue membership. The local API limits intake to 10 attempts per socket IP per day and 200 per hour globally, in memory. These limits reset on restart and are not production-grade. Report records do not store visitor account details or IPs; the server/hosting access logs may still record IPs.
 
 ## Checks
 

@@ -11,7 +11,7 @@
       <a href="#review" class="nav-link">◇ <span>Review queue</span></a>
       <a href="#activity" class="nav-link">◷ <span>Activity</span></a>
       <a href="#preferences" class="nav-link">⚙ <span>Preferences</span></a>
-      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.5 Beta · Consumer / Admin</small></div>
+      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.6 Beta · Consumer / Admin</small></div>
     </aside>
     <main class="dashboard-main">
       <div class="topline"><span>SECURITY / DASHBOARD</span><span class="topline-right">PRIVATE WORKSPACE</span></div>
@@ -43,7 +43,7 @@
       <section class="panel" id="community-console">
         <div class="panel-title"><div><h2>Community reporting and moderation</h2><p>Separate account-based reports, owner review, a reporting dashboard, and controls for approved public publication.</p></div><span class="pill">v0.9</span></div>
         <p class="hint">This is a separate console on the local cloud API. To test it, start the cloud API, create an owner account using <code>CREATE_OWNER.cmd</code>, then open the console. Reporter accounts can only see their own submissions.</p>
-        <div class="connection-form"><button id="openCommunityConsole" type="button" class="primary-button">Open community console</button><span class="hint">Local demo: 127.0.0.1:8877/dashboard</span></div>
+        <div class="connection-form"><button id="openCommunityConsole" type="button" class="primary-button">Open administrator console</button><span class="hint">Local demo: 127.0.0.1:8877/dashboard</span></div>
       </section>
       <section class="panel" id="watchlist"><div class="panel-title"><div><h2>Indicator database</h2><p>Submit a reported domain, URL, email, phone number or address. Then review its evidence in the queue below. A match is not proof of fraud.</p></div><div class="data-actions"><button id="importButton" class="secondary-button" type="button">Import JSON</button><button id="exportButton" class="secondary-button" type="button">Export JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></div>
         <div id="importMessage" class="hint" aria-live="polite"></div>
@@ -88,7 +88,7 @@
         <div class="setting-row"><div><strong>Paused sites</strong><p>Scanning is turned off for these domains and their subdomains. Use this only for sites you intentionally want to exclude.</p></div><div class="muted-site-control"><div id="mutedList" class="muted-list"></div><input id="mutedInput" placeholder="example.org" aria-label="Website to pause"><button id="addMuted" type="button" class="secondary-button">Add site</button></div></div>
         <button id="savePreferences" type="button" class="primary-button">Save preferences</button> <span id="preferencesMessage" class="hint" aria-live="polite"></span>
       </section>
-      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.5 Beta · Independent open-source project<div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
+      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.6 Beta · Independent open-source project<div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
     </main>
   </div>
   <script src="options.js"></script>

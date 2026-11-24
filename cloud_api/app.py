@@ -7,7 +7,7 @@ Endpoints:
 
 This API never reads your private backend/data/scamlens.db file. It has a
 separate database and publisher credential. Community report writes are
-available only to authenticated accounts and moderated by an owner.
+anonymous and private until moderated by an owner.
 It is NOT a complete production service: you still need HTTPS, hosting, abuse
 monitoring, tested backups, and a security review before public release.
 """
@@ -78,7 +78,7 @@ metadata.create_all(engine)
 
 # The extension can read GET /v1/feed without a secret.
 # No CORS middleware is enabled, so ordinary websites do not receive API access.
-app = FastAPI(title='TrueDuck Sentinel API', version='0.9.0', docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title='TrueDuck Sentinel API', version='0.9.6', docs_url=None, redoc_url=None, openapi_url=None)
 
 # A hosted API should only answer requests for its configured domain.
 # In local mode, omit this middleware so the Windows demo remains unchanged.
@@ -97,7 +97,7 @@ async def security_response_headers(request: Request, call_next):
     response.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
     # Mark account and admin responses non-cacheable. The public feed is the
     # exception: its ETag and short caching lifetime are intentional.
-    if request.url.path.startswith(('/v1/auth/', '/v1/reports', '/v1/admin/', '/dashboard')):
+    if request.url.path.startswith(('/v1/auth/', '/v1/reports', '/v1/admin/', '/dashboard', '/report')):
         response.headers['Cache-Control'] = 'no-store'
     if os.environ.get('SCAMLENS_ENV') == 'production':
         # This is meaningful only when the user connects over HTTPS at the proxy.

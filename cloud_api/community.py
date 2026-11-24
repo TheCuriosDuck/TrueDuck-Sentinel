@@ -1,4 +1,4 @@
-"""Account-based community reporting for TrueDuck Sentinel v0.8.
+"""Anonymous community reporting and owner-only administration.
 
 This module is a *local development foundation*, not an audited public service.
 Passwords are salted PBKDF2 hashes, sessions are random bearer credentials whose
@@ -40,6 +40,9 @@ SESSION_LIFETIME = 8 * 3600   # An account session expires after eight hours.
 USERNAME_PATTERN = re.compile(r'^[a-z][a-z0-9_.-]{2,31}$')
 VALID_KINDS = {'domain', 'url', 'email', 'phone', 'address'}
 VALID_DECISIONS = {'pending', 'approved', 'rejected'}
+# A non-loginable internal actor preserves old database foreign keys.
+ANONYMOUS_ACTOR = '__anonymous__'
+_submission_lock = threading.Lock()
 
 # The account table doesn't need emails: a username is sufficient for testing.
 accounts = Table(
@@ -191,11 +194,11 @@ def normalize_username(username: str) -> str:
     return name
 
 
-def create_account(username: str, password: str, role: str = 'reporter') -> int:
-    """Create a reporter or an owner. ONLY the local CLI may create an owner."""
+def create_account(username: str, password: str, role: str = 'owner') -> int:
+    """Create an administrator through the local CLI only."""
     name = normalize_username(username)
     check_password(password)
-    if role not in ('reporter', 'owner'):
+    if role != 'owner':
         raise ValueError('Unsupported role')
     salt = secrets.token_bytes(16).hex()
     with engine.begin() as connection:
@@ -218,7 +221,7 @@ def get_user(request: Request, owner_only: bool = False) -> dict:
             accounts.c.id, accounts.c.username, accounts.c.role, sessions.c.expires_at
         ).select_from(sessions.join(accounts, sessions.c.account_id == accounts.c.id))
             .where(sessions.c.token_hash == digest)).mappings().first()
-    if not row or row['expires_at'] <= int(time.time()):
+    if not row or row['expires_at'] <= int(time.time()) or row['role'] != 'owner':
         raise HTTPException(status_code=401, detail='Login expired or invalid')
     if owner_only and row['role'] != 'owner':
         raise HTTPException(status_code=403, detail='Owner access required')
@@ -301,6 +304,7 @@ def audit_event(connection, report_id: int, actor_id: int, event: str,
         note=note, reference=reference, created_at=now_utc()))
 
 
+@router.get('/report')
 @router.get('/dashboard')
 def dashboard():
     """Serve our own dashboard UI, without third-party scripts or trackers."""
@@ -321,20 +325,9 @@ def dashboard_asset(asset: str):
 
 
 @router.post('/v1/auth/register')
-async def register(request: Request):
-    """Let test users register ONLY when the operator enables registration."""
-    if os.environ.get('SCAMLENS_ALLOW_SIGNUP') != '1':
-        raise HTTPException(status_code=403, detail='Registration is currently closed')
-    throttle('register-ip', client_ip(request), 5, 900)
-    data = await json_input(request)
-    name = normalize_username(data.get('username'))
-    password = data.get('password')
-    check_password(password)
-    try:
-        user_id = create_account(name, password, 'reporter')
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail='Unable to register this username')
-    return {'id': user_id, 'username': name, 'role': 'reporter'}
+def register():
+    """Public account registration is permanently disabled; use the local owner CLI."""
+    raise HTTPException(status_code=403, detail='Only local administrator setup is supported')
 
 
 @router.post('/v1/auth/login')
@@ -350,7 +343,7 @@ async def login(request: Request):
     throttle('login-username', name, 12, 900)
     with engine.connect() as connection:
         account = connection.execute(select(accounts).where(accounts.c.username == name)).mappings().first()
-    if not verify_password(password, account):
+    if not verify_password(password, account) or account['role'] != 'owner':
         raise HTTPException(status_code=401, detail='Invalid credentials')
     token = secrets.token_urlsafe(48)
     expires = int(time.time()) + SESSION_LIFETIME
@@ -381,37 +374,53 @@ def logout(request: Request):
     return {'status': 'logged_out'}
 
 
+def anonymous_actor(connection) -> int:
+    """Reuse a disabled internal database actor, not an actual user account.
+
+    This keeps the existing non-null reporter foreign key compatible with v0.9.5.
+    No visitor username, password, IP address or session is written to the report.
+    """
+    row = connection.execute(select(accounts.c.id, accounts.c.role).where(
+        accounts.c.username == ANONYMOUS_ACTOR)).first()
+    if row:
+        if row.role != 'anonymous':
+            raise HTTPException(status_code=503, detail='Anonymous intake unavailable')
+        return row.id
+    result = connection.execute(insert(accounts).values(
+        username=ANONYMOUS_ACTOR, password_salt='', password_hash='',
+        role='anonymous', created_at=now_utc()))
+    return result.inserted_primary_key[0]
+
+
 @router.post('/v1/reports', status_code=201)
 async def submit_report(request: Request):
-    """Authenticated reporters submit to a PRIVATE pending queue, not the feed."""
-    user = get_user(request)
-    throttle('reports-account', str(user['id']), 10, 86400)
+    """Accept account-free submissions into a private, unverified review queue."""
+    # IPs are used only in memory for local throttling; no IP is stored on reports.
+    # The global cap also limits simple distributed abuse in a single process.
+    throttle('anonymous-ip', client_ip(request), 10, 86400)
+    throttle('anonymous-global', 'all', 200, 3600)
+    # Require JSON rather than cross-site browser form submissions.
+    if request.headers.get('content-type', '').split(';')[0].strip().lower() != 'application/json':
+        raise HTTPException(status_code=415, detail='Expected application/json')
     data = await json_input(request)
     kind = field(data, 'kind', 10, True)
     value = normalize_indicator(kind, data.get('value'))
     details = field(data, 'details', 600, True)
     evidence_ref = field(data, 'evidence_ref', 300)
-    with engine.begin() as connection:
+    # Serialize duplicate checks locally. Multi-worker hosting needs DB constraints
+    # and a shared limiter; the development server is intentionally single-process.
+    with _submission_lock, engine.begin() as connection:
+        actor = anonymous_actor(connection)
         duplicate = connection.execute(select(reports.c.id).where(and_(
-            reports.c.reporter_id == user['id'], reports.c.kind == kind,
-            reports.c.value == value))).first()
-        if duplicate:
-            raise HTTPException(status_code=409, detail='You already submitted this indicator')
-        result = connection.execute(insert(reports).values(
-            reporter_id=user['id'], kind=kind, value=value, details=details,
-            evidence_ref=evidence_ref, status='pending', review_note='',
-            review_reference='', created_at=now_utc(), updated_at=now_utc()))
-    return {'id': result.inserted_primary_key[0], 'status': 'pending'}
-
-
-@router.get('/v1/reports')
-def own_reports(request: Request):
-    """Reporters can only read submissions they personally created."""
-    user = get_user(request)
-    with engine.connect() as connection:
-        rows = connection.execute(select(reports).where(
-            reports.c.reporter_id == user['id']).order_by(reports.c.id.desc()).limit(100)).mappings().all()
-    return {'records': [report_view(row) for row in rows]}
+            reports.c.reporter_id == actor, reports.c.kind == kind,
+            reports.c.value == value, reports.c.status == 'pending'))).first()
+        if not duplicate:
+            connection.execute(insert(reports).values(
+                reporter_id=actor, kind=kind, value=value, details=details,
+                evidence_ref=evidence_ref, status='pending', review_note='',
+                review_reference='', created_at=now_utc(), updated_at=now_utc()))
+    # Identical responses for duplicates avoid exposing private queue membership.
+    return {'status': 'received'}
 
 
 @router.get('/v1/admin/reports')
