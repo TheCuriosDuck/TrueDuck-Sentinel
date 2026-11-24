@@ -1,6 +1,6 @@
 """Update TrueDuck Sentinel's optional malware URL feed without changing personal reports.
 
-Beginner commands (from the main TrueDuck Sentinel-Starter folder):
+Beginner commands (from the main trueduck-sentinel folder):
   py -3.12 backend/update_urlhaus.py --sample       # Safe fictional records.
   py -3.12 backend/update_urlhaus.py --file feed.csv # Previously downloaded CSV.
   py -3.12 backend/update_urlhaus.py                # Real URLhaus Auth-Key.

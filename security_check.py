@@ -44,9 +44,9 @@ def inspect(root: Path = PROJECT):
     if not required <= {'storage', 'activeTab', 'alarms'}:
         errors.append(f'Unexpected required browser API permission(s): {sorted(required - {"storage", "activeTab", "alarms"})}')
 
-    # Consumers need only the TrueDuck HTTPS feed at install, not localhost.
+    # No feed server is permitted automatically on installation.
     hosts = manifest.get('host_permissions', [])
-    if hosts != ['https://api.trueducksecurity.com/*']:
+    if hosts != []:
         errors.append(f'Required host permission changed: {hosts!r}')
 
     # An explicitly selected hosted feed may use HTTPS, never arbitrary HTTP.
@@ -54,12 +54,12 @@ def inspect(root: Path = PROJECT):
         if not (host.startswith('https://') or host in ('http://127.0.0.1:8765/*','http://127.0.0.1:8877/*')):
             errors.append(f'Unsafe optional host permission: {host}')
     if 'https://*/*' in manifest.get('optional_host_permissions', []):
-        warnings.append('Any HTTPS feed host is eligible for an OPTIONAL prompt. For a store release, prefer a fixed owned API domain.')
+        warnings.append('Optional HTTPS access is broad but requires explicit user consent. A store release should ideally use an audited fixed endpoint.')
 
-    # TrueDuck Security allows only its own API and the local development server.
+    # The only predeclared optional hosts are HTTPS (with permission) and local test services.
     expected = {'http://127.0.0.1:8765/*', 'http://127.0.0.1:8877/*'}
-    if set(manifest.get('optional_host_permissions', [])) != expected:
-        errors.append('Unexpected optional feed host: TrueDuck-owned API only.')
+    if set(manifest.get('optional_host_permissions', [])) != expected | {'https://*/*'}:
+        errors.append('Unexpected optional feed host: Only explicitly requested HTTPS or local development hosts are permitted.')
 
     auto_matches = [value for spec in manifest.get('content_scripts', []) for value in spec.get('matches', [])]
     if 'http://*/*' in auto_matches or 'https://*/*' in auto_matches:
@@ -108,8 +108,7 @@ def inspect(root: Path = PROJECT):
         if item not in dockerignore:
             errors.append(f'Missing {item} from .dockerignore')
 
-    if manifest.get('author', '').strip() in ('', 'YOUR LEGAL NAME'):
-        warnings.append('The manifest needs a nonempty public author name or project pseudonym.')
+    # The public author field is optional. This source release omits it.
 
     return errors, warnings
 
@@ -117,7 +116,7 @@ def inspect(root: Path = PROJECT):
 def main():
     """Return a nonzero exit code if the preflight finds a blocking error."""
     errors, warnings = inspect()
-    print('TrueDuck Security TrueDuck Sentinel v0.9.3 — static security preflight')
+    print('TrueDuck Sentinel v0.9.5 — static security preflight')
     for warning in warnings:
         print('REVIEW:', warning)
     for error in errors:

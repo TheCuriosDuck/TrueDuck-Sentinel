@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-# Load the same server.py used by START_DATABASE.cmd, without starting it.
+# Load the same server.py used by backend/server.py, without starting it.
 FILE = Path(__file__).resolve().parents[1] / "backend" / "server.py"
 spec = importlib.util.spec_from_file_location("scamlens_review_api", FILE)
 api = importlib.util.module_from_spec(spec)

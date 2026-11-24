@@ -5,7 +5,7 @@ const DEFAULT_SETTINGS = {
   autoScan: true, showWarning: true, sensitivity: 'balanced',
   accent: '#1d70bd', saveHistory: false, mutedHosts: []
 };
-const PUBLIC_FEED_URL = 'https://api.trueducksecurity.com/v1/feed';
+const PUBLIC_FEED_URL = ''; // No centralized feed is configured in the source release.
 const FEED_ALARM = 'scamlens-public-feed-refresh';
 const DEFAULTS = {
   settings: DEFAULT_SETTINGS, dbCache: [], dbSyncedAt: null, publicFeedCache: [], publicFeedUrl: PUBLIC_FEED_URL, publicFeedSyncedAt: null,
@@ -42,17 +42,19 @@ async function initialize() {
   if (Object.keys(missing).length) await chrome.storage.local.set(missing);
 }
 // Automatic, read-only feed updates require no account or access token.
-// The only installation-wide network host is the TrueDuck HTTPS API.
+// No required network host: users opt in to a feed server in Settings.
 async function refreshPublicFeed() {
+  // Only fetch from a feed manually configured by the user in Settings.
   await protectionReady;
   const stored = await chrome.storage.local.get('publicFeedUrl');
-  const configured = stored.publicFeedUrl || PUBLIC_FEED_URL;
-  // A developer-selected localhost feed is handled manually from Settings.
-  if (configured !== PUBLIC_FEED_URL) return;
+  if (!stored.publicFeedUrl) return;
   try {
-    const response = await fetch(PUBLIC_FEED_URL, {
-      cache: 'no-store', signal: AbortSignal.timeout(12000)
-    });
+    const url = new URL(stored.publicFeedUrl);
+    const loopback = url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '8877';
+    if (!(url.protocol === 'https:' || loopback) || url.pathname !== '/v1/feed') return;
+    // A user grants the host permission explicitly when configuring the feed.
+    if (!await chrome.permissions.contains({origins: [`${url.origin}/*`]})) return;
+    const response = await fetch(url.href, {cache: 'no-store', signal: AbortSignal.timeout(12000)});
     const doc = await ScamLensFeed.readLimitedJson(response);
     const records = ScamLensFeed.validateFeed(doc);
     await chrome.storage.local.set({
@@ -60,8 +62,8 @@ async function refreshPublicFeed() {
       publicFeedSyncedAt: new Date().toISOString(),
       publicFeedState: 'updated'
     });
-  } catch (err) {
-    // A missing/unreachable API must never erase previously downloaded records.
+  } catch {
+    // No network / failed feed must not be mistaken for a clean or safe result.
     await chrome.storage.local.set({publicFeedState: 'unavailable'});
   }
 }

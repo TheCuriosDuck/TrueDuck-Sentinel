@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TrueDuck Sentinel Beta | TrueDuck Security</title>
+  <title>TrueDuck Sentinel Beta | community</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="popup-body">
   <div class="popup-shell">
     <header class="popup-header">
-      <div class="brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Security</strong><small>TrueDuck Sentinel v0.9.3 Beta · Automatic protection</small></div></div>
+      <div class="brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Sentinel</strong><small>Beta · automatic browser checks</small></div></div>
       <button id="settingsButton" class="icon-button" type="button" aria-label="Open settings" title="Settings">⚙</button>
     </header>
     <main class="popup-main">
@@ -30,7 +30,7 @@
         </div>
         <button id="lookupButton" type="button" class="primary-button full">Look up indicator</button>
         <div id="lookupResult" class="results-panel" hidden aria-live="polite"></div>
-        <p class="lookup-privacy">No account needed. The value you enter is checked locally first; clicking Look up also sends it to the TrueDuck API over HTTPS when available. It is never sent automatically while you browse. Not found does not mean safe.</p>
+        <p class="lookup-privacy">No account needed. The value you enter is checked locally first; clicking Look up also sends it to the configured lookup service over HTTPS when available. It is never sent automatically while you browse. Not found does not mean safe.</p>
       </section>
       <div class="section-label with-space">QUICK CHECK</div>
       <label class="field-label" for="manualInput">Paste a message, link, email or phone number</label>
@@ -41,7 +41,7 @@
       <div id="syncMessage" class="muted-caption" aria-live="polite"></div>
     </main>
     <footer class="popup-footer"><span>Scam awareness &amp; educational guidance</span><button id="manageButton" type="button" class="text-button">Manage database →</button></footer>
-    <div class="td-legal">TrueDuck Security provides educational support and fraud guidance. A warning or clean scan does not prove whether a site is safe or fraudulent. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">Company website</a></div>
+    <div class="legal-note">Independent open-source developer preview. Results are advisory, not proof that a website or person is safe or fraudulent.</div>
   </div>
   <script src="shared/detector.js"></script>
   <script src="shared/lookup.js"></script>

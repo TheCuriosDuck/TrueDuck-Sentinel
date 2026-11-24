@@ -30,10 +30,10 @@
     wrap.style.cssText = 'box-sizing:border-box;background:#14233d;color:#fff;border:1px solid #41526a;box-shadow:0 18px 48px #101d3480;border-radius:12px;padding:16px;font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;';
     const title = document.createElement('strong');
     title.style.cssText = 'display:block;font-size:14px;margin-bottom:6px;';
-    title.textContent = result.assessment === 'reviewed' ? 'TrueDuck Security · Reviewed watchlist match'
-      : result.assessment === 'external' ? 'TrueDuck Security · Malware URL intelligence match'
-      : result.assessment === 'published' ? 'TrueDuck Security · Published intelligence match'
-      : result.assessment === 'reported' ? 'TrueDuck Security · Unverified report match' : 'TrueDuck Security · Suspicious language';
+    title.textContent = result.assessment === 'reviewed' ? 'community · Reviewed watchlist match'
+      : result.assessment === 'external' ? 'community · Malware URL intelligence match'
+      : result.assessment === 'published' ? 'community · Published intelligence match'
+      : result.assessment === 'reported' ? 'community · Unverified report match' : 'community · Suspicious language';
     const detail = document.createElement('div');
     detail.style.cssText = 'color:#d2dded;font-size:13px;margin-bottom:12px;';
     detail.textContent = result.assessment === 'patterns'

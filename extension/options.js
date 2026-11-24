@@ -306,15 +306,15 @@ async function addMuted() {
 }
 // --- Optional public intelligence: separate from the private owner database. ---
 // This function runs only in the extension settings page, NOT inside a webpage.
-// Public feed connections are intentionally restricted to TrueDuck's owned API.
+// Public feed connections are intentionally restricted to Open Scam's owned API.
 // Keep localhost only for your current Windows development tests.
 function parseCloudFeedUrl(value) {
   const url = new URL(value.trim());
   const loopback = url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '8877';
-  const official = url.protocol === 'https:' && url.hostname === 'api.trueducksecurity.com' && !url.port;
-  if (!(official || loopback) || url.pathname !== '/v1/feed' ||
+  const remote = url.protocol === 'https:' && !url.port;
+  if (!(remote || loopback) || url.pathname !== '/v1/feed' ||
       url.search || url.hash || url.username || url.password) {
-    throw new Error('Use https://api.trueducksecurity.com/v1/feed, or the local demo http://127.0.0.1:8877/v1/feed');
+    throw new Error('Use an HTTPS feed ending in /v1/feed or http://127.0.0.1:8877/v1/feed for local testing.');
   }
   return url;
 }
@@ -328,7 +328,7 @@ function publishedRecord(raw) {
   }
   // No private notes or other untrusted metadata is accepted from this server.
   return {kind: raw.kind, value: raw.value, canonical: normalized,
-          status: 'published', review_state: 'approved', source: 'TrueDuck Security published feed', reason: ''};
+          status: 'published', review_state: 'approved', source: 'User-configured public feed', reason: ''};
 }
 function ScamLensCanonical(kind, value) {
   if (kind === 'domain') {
@@ -367,7 +367,7 @@ async function syncCloudFeed() {
   catch (error) { message('cloudMessage', error.message, true); return; }
   try {
     // Browsers display a permission prompt if this origin has not been granted.
-    const allowed = url.hostname === 'api.trueducksecurity.com' ? true : await chrome.permissions.request({origins: [`${url.origin}/*`]});
+    const allowed = await chrome.permissions.request({origins: [`${url.origin}/*`]});
     if (!allowed) { message('cloudMessage', 'Site permission was not granted.', true); return; }
     message('cloudMessage', 'Downloading published indicators…');
     const response = await fetch(url.href, {signal: AbortSignal.timeout(10000), cache: 'no-store'});
@@ -398,13 +398,13 @@ async function syncCloudFeed() {
 async function clearCloudFeed() {
   await chrome.storage.local.set({publicFeedCache: [], publicFeedUrl: '', publicFeedSyncedAt: null});
   $('cloudFeedStatus').textContent = 'No public indicators cached.';
-  $('cloudUrl').value = 'https://api.trueducksecurity.com/v1/feed';
+  $('cloudUrl').value = '';
   message('cloudMessage', 'Public feed cache cleared. Local reports were not changed.');
 }
 
 async function main() {
   const saved = await chrome.storage.local.get(['apiToken', 'dbCache', 'dbSyncedAt', 'feedUpdatedAt', 'settings', 'publicFeedUrl', 'publicFeedCache', 'publicFeedSyncedAt']);
-  $('cloudUrl').value = saved.publicFeedUrl || 'https://api.trueducksecurity.com/v1/feed';
+  $('cloudUrl').value = saved.publicFeedUrl || '';
   $('cloudFeedStatus').textContent = saved.publicFeedSyncedAt ? `${(saved.publicFeedCache || []).length} published entries · Synced ${new Date(saved.publicFeedSyncedAt).toLocaleString()}` : 'Cloud feed not synchronized.';
   token = saved.apiToken || '';
   $('apiToken').value = token;

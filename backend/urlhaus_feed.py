@@ -127,7 +127,7 @@ def fetch_csv(auth_key: str) -> io.StringIO:
     # Use a fixed official HTTPS endpoint. Never accept a custom hostname here.
     address = f"https://{FEED_HOST}/v2/files/exports/{key}/recent.csv"
     req = urllib.request.Request(address, headers={
-        "User-Agent": "TrueDuck Sentinel-Local/0.4",
+        "User-Agent": "TrueDuckSentinel-Local/0.4",
         "Accept": "text/csv",
     })
     opener = urllib.request.build_opener(NoRedirect())  # Disable HTTP redirects.

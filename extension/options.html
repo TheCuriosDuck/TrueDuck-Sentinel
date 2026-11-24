@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TrueDuck Security | TrueDuck Sentinel Dashboard</title><link rel="stylesheet" href="styles.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TrueDuck Sentinel | Settings</title><link rel="stylesheet" href="styles.css"></head>
 <body class="dashboard-body">
   <div class="dashboard-layout">
     <aside class="sidebar">
-      <div class="brand sidebar-brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Security</strong><small>TrueDuck Sentinel · Intelligence console</small></div></div>
+      <div class="brand sidebar-brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Sentinel</strong><small>TrueDuck Sentinel · Intelligence console</small></div></div>
       <div class="sidebar-label">WORKSPACE</div>
       <a href="#overview" class="nav-link">▦ <span>Overview</span></a>
       <a href="#watchlist" class="nav-link active">▤ <span>Watchlist</span></a>
       <a href="#review" class="nav-link">◇ <span>Review queue</span></a>
       <a href="#activity" class="nav-link">◷ <span>Activity</span></a>
       <a href="#preferences" class="nav-link">⚙ <span>Preferences</span></a>
-      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.3 Beta · Consumer / Admin</small></div>
+      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.5 Beta · Consumer / Admin</small></div>
     </aside>
     <main class="dashboard-main">
       <div class="topline"><span>SECURITY / DASHBOARD</span><span class="topline-right">PRIVATE WORKSPACE</span></div>
-      <section id="overview" class="page-intro"><div class="eyebrow">TrueDuck Security · Threat intelligence</div><h1>TrueDuck Sentinel protection center</h1><p>Maintain your own records and review possible matches without sending webpage text to a remote service.</p></section>
+      <section id="overview" class="page-intro"><div class="eyebrow">COMMUNITY THREAT INTELLIGENCE</div><h1>TrueDuck Sentinel protection center</h1><p>Maintain your own records and review possible matches without sending webpage text to a remote service.</p></section>
       <section class="stat-grid">
         <div class="stat-card"><span>WATCHLIST ENTRIES</span><strong id="totalCount">0</strong><small>Locally cached</small></div>
         <div class="stat-card"><span>REVIEWED ENTRIES</span><strong id="verifiedCount">0</strong><small>Approved by the local reviewer</small></div>
@@ -35,9 +35,9 @@
         <p id="publicMessage" class="hint" aria-live="polite">Use “Share in feed” beside an approved domain or URL in your indicator database below. Downloading creates a local file only.</p>
       </section>
       <section class="panel" id="cloud-feed">
-        <div class="panel-title"><div><h2>TrueDuck published intelligence feed</h2><p>Regular users automatically receive approved indicators from the TrueDuck HTTPS API after deployment. Local test feeds can be selected manually.</p></div><span class="pill">Automatic HTTPS</span></div>
-        <p class="hint">Only the public domain/URL list is downloaded. Webpage text, private reports, and your database token are never uploaded. For a local test run <code>START_CLOUD_API.cmd</code> and <code>PUBLISH_LOCAL_FEED.cmd</code>.</p>
-        <div class="connection-form"><label for="cloudUrl">Feed URL</label><input id="cloudUrl" type="url" spellcheck="false" placeholder="https://api.trueducksecurity.com/v1/feed" aria-label="Published feed URL"><button id="syncCloudButton" class="primary-button" type="button">Sync published feed</button><button id="clearCloudButton" class="secondary-button" type="button">Clear feed</button></div>
+        <div class="panel-title"><div><h2>Public intelligence feed (optional)</h2><p>No central feed is configured. Choose a trusted HTTPS feed manually, or use the local development API.</p></div><span class="pill">Opt-in sync</span></div>
+        <p class="hint">Only the public domain/URL list is downloaded. Webpage text, private reports, and your database token are never uploaded. For a local test, run <code>RUN_LOCAL.cmd</code> and configure the local feed.</p>
+        <div class="connection-form"><label for="cloudUrl">Feed URL</label><input id="cloudUrl" type="url" spellcheck="false" placeholder="https://your-server.example/v1/feed" aria-label="Published feed URL"><button id="syncCloudButton" class="primary-button" type="button">Sync published feed</button><button id="clearCloudButton" class="secondary-button" type="button">Clear feed</button></div>
         <p id="cloudFeedStatus" class="hint">Cloud feed not synchronized.</p><p id="cloudMessage" class="hint" aria-live="polite"></p>
       </section>
       <section class="panel" id="community-console">
@@ -88,10 +88,10 @@
         <div class="setting-row"><div><strong>Paused sites</strong><p>Scanning is turned off for these domains and their subdomains. Use this only for sites you intentionally want to exclude.</p></div><div class="muted-site-control"><div id="mutedList" class="muted-list"></div><input id="mutedInput" placeholder="example.org" aria-label="Website to pause"><button id="addMuted" type="button" class="secondary-button">Add site</button></div></div>
         <button id="savePreferences" type="button" class="primary-button">Save preferences</button> <span id="preferencesMessage" class="hint" aria-live="polite"></span>
       </section>
-      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.3 Beta · Developed by <strong>TrueDuck Security</strong><div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
+      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.5 Beta · Independent open-source project<div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
     </main>
   </div>
   <script src="options.js"></script>
-<div class="td-options-legal">TrueDuck Security provides educational support, scam awareness, and fraud guidance. We are not a law firm, law enforcement agency, bank, or government agency, and we do not guarantee results or the recovery of lost funds. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">trueducksecurity.com</a></div>
+<div class="legal-options">Independent open-source beta. Warnings are educational and are not proof of fraud or safety.</div>
 </body>
 </html>

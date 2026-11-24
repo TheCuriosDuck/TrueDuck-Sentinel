@@ -1,6 +1,6 @@
 # EXAMPLE only. Do NOT expose the development SQLite server or local publisher token.
 # Put Caddy on a trusted HTTPS host in front of a production-reviewed API process.
-# For future hosting only, set SCAMLENS_PUBLIC_HOST=api.trueducksecurity.com.
+# For future hosting only, set SCAMLENS_PUBLIC_HOST=example.invalid.
 # Having a DNS name does NOT mean a certificate or API is deployed.
 # Caddy obtains and renews a TLS certificate for eligible public DNS hostnames.
 {$SCAMLENS_PUBLIC_HOST} {

@@ -1,6 +1,6 @@
 const byId = id => document.getElementById(id);
 const app = { records: [], settings: {} };
-const OFFICIAL_API = 'https://api.trueducksecurity.com';
+const OFFICIAL_API = ''; // No backend is preconfigured or contacted automatically.
 function addFinding(parent, title, description, type) {
   const item = document.createElement('div'); item.className = 'finding-item';
   const indicator = document.createElement('span'); indicator.className = `finding-marker ${type}`;
@@ -129,7 +129,18 @@ async function lookupIndicator() {
   // Browsing, automatic scanning, and passive webpage content NEVER use this endpoint.
   let origin = OFFICIAL_API;
   const saved = await chrome.storage.local.get('publicFeedUrl');
-  if (saved.publicFeedUrl === 'http://127.0.0.1:8877/v1/feed') origin = 'http://127.0.0.1:8877';
+  try {
+    const url = new URL(saved.publicFeedUrl || '');
+    if (url.pathname === '/v1/feed' && (url.protocol === 'https:' ||
+        (url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '8877'))) {
+      origin = url.origin;
+    }
+  } catch { /* No online lookup server configured. */ }
+  if (!origin) {
+    save('Online lookup not configured',
+      'Only locally cached indicators were checked. An unknown contact is not necessarily safe.', 'caution');
+    return;
+  }
   byId('lookupButton').disabled = true;
   try {
     const response = await fetch(origin + '/v1/lookup', {
@@ -148,7 +159,7 @@ async function lookupIndicator() {
     }
   } catch {
     save(local.match ? 'Online lookup unavailable' : 'Unable to verify online',
-      'Your local check completed, but the TrueDuck lookup service was unreachable. No online reputation result was returned.', 'caution');
+      'Your local check completed, but the Open Scam lookup service was unreachable. No online reputation result was returned.', 'caution');
   } finally { byId('lookupButton').disabled = false; }
 }
 async function main() {

@@ -1,58 +1,73 @@
-# TrueDuck Sentinel Beta by TrueDuck Security
+# TrueDuck Sentinel (Beta)
 
-**Open-source Microsoft Edge scam-awareness extension, published under the TrueDuck Security project brand.**
+An independent, open-source browser extension for detecting suspicious language and matching known risk indicators on webpages. Includes manual email/phone checks, an optional local database, and an optional community-reporting API.
 
-- **Version:** 0.9.3 Beta (developer preview; suggested first tag `v0.9.3-beta.1`)
-- **Software license:** Apache License, Version 2.0 — see [`LICENSE`](LICENSE)
-- **Public developer:** TrueDuck Security (brand / public author pseudonym; not an incorporated company)  
-- **Brand website:** https://trueducksecurity.com/
-- **Trademark / brand guidelines:** [`TRADEMARKS.md`](TRADEMARKS.md)
-- **Community contributions:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- **Security reporting:** [`SECURITY.md`](SECURITY.md)
+**No sign-in is required to use the extension.** Automatic scans work locally. A live shared intelligence feed and online email/phone reputation checks require the user or project maintainers to configure and host an API.
 
-To the extent the project contributors have rights to license their contributions, the code is available to view, modify, redistribute, and use commercially under Apache-2.0. Branding is distinct from the code license: a fork can describe where the project came from but should not impersonate TrueDuck Security or imply endorsement. The included generic placeholder shield icons are part of this source release; **no official company logo has been provided or included**.
+## Features
 
-## Easy installation for everyday users (v0.9.3 Beta)
+- Automatic local website warnings for suspicious wording and downloaded indicators
+- Popup: quick message check and email / phone exact-match lookup
+- Clear distinction between reviewed records, unverified reports, and suspicious patterns
+- Optional Python SQLite database and reviewed public JSON feed
+- Optional FastAPI community submission and moderation server
 
-- **No account or Python installation is needed** for browser scanning and manual email/phone lookup.
-- Load `extension/` with Edge's `edge://extensions` → Developer mode → Load unpacked. After eventual Edge Add-ons publication, installation will be one click.
-- Automatic scanning runs locally on permitted HTTP(S) webpages; it looks for suspicious phrases and indicators. It can show cautions even offline. A warning is not proof of fraud.
-- The extension automatically attempts to download a **read-only** approved domain/URL feed from `https://api.trueducksecurity.com/v1/feed`, and refreshes periodically. This endpoint **is not deployed yet**. If unreachable, scanning falls back to locally cached indicators and text heuristics. Do not claim real-time known-scam protection until the API is hosted and checked.
-- The popup has an **Email / Phone lookup**. After the user explicitly clicks Look up, it first checks locally cached matches and then sends that one exact contact indicator over HTTPS to `https://api.trueducksecurity.com/v1/lookup` if available. No accounts or administrator token are used. If the API is unavailable, it says so and does not claim the contact is safe.
-- The administrator signs in to the separate dashboard to review community reports and can **explicitly opt in** individual reviewed email/phone indicators for anonymous exact-match queries. These contact values are **not distributed in the public feed**. Unapproved, private, and rejected reports are not searchable.
-- To test the hosted API behavior on Windows before deployment, read [`TEST_PUBLIC_USER_V093.md`](TEST_PUBLIC_USER_V093.md).
+## Installation in Microsoft Edge
 
-**Status:** This is a local developer Beta; production deployment, abuse-rate limits, privacy/legal review, and an independent security audit are outstanding. Opening a webpage with an extension is not an assurance of protection against fraud.
+1. Open `edge://extensions`, enable Developer mode, and choose **Load unpacked**.
+2. Select the **`extension`** directory, which contains `manifest.json`.
+3. Visit ordinary websites or use the popup to check text, emails, and phone numbers.
+4. Local pattern scanning works with **no account, no server, and no Python**. A missing online lookup is shown as *unavailable*, not *safe*.
 
-## What it includes
+## Optional local API development
 
-- `extension/` — Edge extension for risk signals, watched indicators, and explanations
-- `backend/` — Python service, your own SQLite indicator database and review/export tools
-- `cloud_api/` — community reporting, moderation dashboard, published feed API, and future hosting scaffolding
-- `tests/` — Python and JavaScript tests
-- `CHECK_SECURITY.cmd` — static preflight checks
-- `START_V09_HERE.md` and `BRAND_AND_DOMAIN.md` — Windows setup and customizations
+Install Python 3.12 and run, from the project root:
 
-## Local Windows setup (development only)
+```powershell
+py -3.12 -m pip install -r cloud_api\requirements.txt
+py -3.12 backend\server.py
+```
 
-1. Extract the project. Open Command Prompt in the top-level folder.
-2. Install prerequisites: `py -3.12 -m pip install -r cloud_api\requirements.txt`
-3. Run `START_DATABASE.cmd` for the local watchlist API.
-4. Run `START_CLOUD_API.cmd` for the local community API.
-5. Run `CREATE_OWNER.cmd` to create the local admin account, if one has not already been created.
-6. Open `edge://extensions` > **Developer mode** > **Load unpacked**, selecting the `extension` folder.
-7. Configure local connections in extension Settings and check `http://127.0.0.1:8877/health`.
+Start the community API in a **second** terminal:
 
-**Do not host the development servers directly on the internet.** `api.trueducksecurity.com` is a planned production endpoint, not a deployed service. Read [`PUBLIC_RELEASE_CHECKLIST.md`](PUBLIC_RELEASE_CHECKLIST.md) before any public launch.
+```powershell
+py -3.12 -m cloud_api.dev_server
+```
 
-## Privacy and data
+Health check: `http://127.0.0.1:8877/health`  |  Admin console: `http://127.0.0.1:8877/dashboard`.
 
-The public repository should contain **source only**. Never commit `backend/data/`, `cloud_api/data/`, SQLite files, API tokens, credentials, backups, real scam reports, or personal data. See `.gitignore` and `SECURITY.md`. Real-world reports may contain sensitive information and are not covered by the code license just because the code is open source.
+To create the first administrator account:
 
-TrueDuck Sentinel offers **educational scam awareness**, not a guarantee that any site is safe or that reported individuals have committed fraud. This development build has not undergone independent security testing; local tests do not establish production safety. `PRIVACY.md` is a draft, not a published policy.
+```powershell
+py -3.12 -m cloud_api.manage_owner
+```
 
-## Attribution and ownership
+The extension's **Settings** page can connect to the localhost APIs. Manual public-feed sync accepts a user-approved HTTPS endpoint ending in `/v1/feed`, or the local development URL `http://127.0.0.1:8877/v1/feed`. Grant network permission only to an API you trust.
 
-The public author attribution uses **TrueDuck Security** as a project pseudonym; no personal name is included. This does not itself establish legal copyright ownership or rights to license someone else’s code. Review the copyright eligibility of AI-assisted material, third-party code, assets, and data licenses before a public release. See [`OWNERSHIP.md`](OWNERSHIP.md).
+## Checks
 
-Built as **TrueDuck Sentinel by TrueDuck Security**; extensions and forks may use the code under Apache-2.0, while brand/trademark rights remain separate.
+```powershell
+py -3.12 security_check.py
+py -3.12 -m unittest discover -s tests -p "test_*.py"
+```
+
+With Node installed, run JS tests via `node tests/detector.test.js`, `node tests/feed.test.js`, `node tests/lookup.test.js`.
+
+## License and project name
+
+**The Unlicense:** to the extent contributors have the rights to release their contributions, the original code is dedicated to the public domain where possible, with a permissive fallback. Anyone may copy, modify, distribute, and use it commercially, without attribution. The software is supplied as-is.
+
+**No project trademark is asserted.** The project name is intended for free community use; this statement grants no rights held by third parties. However, a source-code license cannot stop all third-party trademark claims or guarantee exclusive rights will never arise. No participant is authorized to claim they represent all contributors without permission. See the `LICENSE` file.
+
+TrueDuck Sentinel is the project name; no personal author, company publisher, or company API is specified in this release. The name is not trademark-cleared and does not imply endorsement by any company. The project's use of old internal identifiers such as `SCAMLENS_` or `scamlens.public-feed.v1` is only for backward protocol compatibility.
+
+## Privacy and release limitations
+
+- This is a **developer Beta**, not a fully audited security product. Warnings are not proof of fraud; absence of a warning does not mean safe.
+- Scanning of permitted webpage content occurs locally. Optional scan history is off by default.
+- Manual contact lookup can send the entered email or phone number to the **user-configured** API only after the user clicks **Look up**. Do not connect a service that you don't trust.
+- Content-script permissions are broad because automatic warnings work on ordinary websites; consider an on-demand edition for more restricted access.
+- **Never commit** `backend/data`, `cloud_api/data`, `.env`, tokens, API credentials, database backups, or real users' reports. `.gitignore` and `.dockerignore` help but don't replace manual review.
+- This code is not ready for public hosting: HTTPS, production authentication, privacy notice, rate limiting, ongoing maintenance, and independent review are still required.
+- Imported threat feeds may have their **own licenses and terms**, separate from this repository's license.
+- Removing authorship from files does not erase Git commit authors, account ownership, or previously published history. If anonymity is important, create a new neutral repository and review its metadata before making it public.

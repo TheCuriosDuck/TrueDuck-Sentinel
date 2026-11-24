@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TrueDuck Security | Community Intelligence</title>
+  <title>TrueDuck Sentinel | Community Console</title>
   <link rel="stylesheet" href="/dashboard/styles.css">
   <script src="/dashboard/app.js" defer></script>
 </head>
 <body>
   <header class="masthead">
-    <div class="brand"><span class="brand-mark">TD</span><span><b>TrueDuck Security</b><small>SENTINEL INTELLIGENCE CONSOLE</small></span></div>
+    <div class="brand"><span class="brand-mark">TS</span><span><b>TrueDuck Sentinel</b><small>COMMUNITY REPORTING CONSOLE</small></span></div>
     <div class="masthead-right"><span class="env"><span class="env-dot"></span> LOCAL DEVELOPMENT</span><span id="userLabel" class="user-label"></span><button type="button" id="logoutButton" class="small-button" hidden>Sign out</button></div>
   </header>
   <main class="layout">
@@ -28,7 +28,7 @@
       <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
 
       <section id="authScreen" class="auth-screen">
-        <div class="eyebrow">ACCOUNT ACCESS</div><h1>Sign in to TrueDuck Security</h1>
+        <div class="eyebrow">ACCOUNT ACCESS</div><h1>Sign in to the community console</h1>
         <p class="muted intro">Manage your own reports or moderate the community review queue.</p>
         <div class="auth-grid">
           <form id="loginForm" class="panel form-panel">
@@ -64,7 +64,7 @@
               <div class="panel"><div class="panel-head"><h2>Recent submissions</h2><span class="pill">Daily count</span></div><div id="dailyBars" class="bars"><p class="muted">No data yet.</p></div></div>
             </div>
           </div>
-          <div class="panel notice"><h2>How the review process works</h2><div class="steps"><div><b>01</b><span>Someone submits a report. It stays private.</span></div><div><b>02</b><span>An owner examines supporting evidence and records a decision.</span></div><div><b>03</b><span>Approved domains or URLs can be published separately, then retracted.</span></div></div><p class="muted micro">A report or feed match is not independent proof of fraud. TrueDuck Security does not automatically contact URLs in reports.</p></div>
+          <div class="panel notice"><h2>How the review process works</h2><div class="steps"><div><b>01</b><span>Someone submits a report. It stays private.</span></div><div><b>02</b><span>An owner examines supporting evidence and records a decision.</span></div><div><b>03</b><span>Approved domains or URLs can be published separately, then retracted.</span></div></div><p class="muted micro">A report or feed match is not independent proof of fraud. The service does not automatically contact URLs in reports.</p></div>
         </section>
 
         <section id="submitScreen" class="screen" hidden>
@@ -98,9 +98,9 @@
           <div class="panel"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Action</th><th>Note</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table></div></div>
         </section>
       </section>
-      <footer>SENTINEL v0.9.3 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
+      <footer>TRUEDUCK SENTINEL v0.9.5 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
     </section>
   </main>
-<footer class="td-console-footer">TrueDuck Security · TrueDuck Sentinel | Educational scam awareness and fraud guidance only. No promise of threat detection or recovery. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">Company website</a></footer>
+<footer class="console-footer">community · TrueDuck Sentinel | Educational scam awareness and fraud guidance only. No promise of threat detection or recovery.</footer>
 </body>
 </html>

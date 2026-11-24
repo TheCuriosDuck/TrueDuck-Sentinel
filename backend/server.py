@@ -208,7 +208,7 @@ def bootstrap() -> str:
 class Handler(BaseHTTPRequestHandler):
     """Handle HTTP requests sent by Microsoft Edge or local test programs."""
 
-    server_version = "TrueDuck SentinelLocal/0.6"
+    server_version = "TrueDuckSentinelLocal/0.6"
 
     def log_message(self, format, *args):
         # Avoid logging URL indicator values and authentication details.

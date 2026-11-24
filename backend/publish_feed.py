@@ -1,6 +1,6 @@
 """Preview or publish the owner's APPROVED, opt-in domains and URLs.
 
-Usage (from TrueDuck Sentinel-Starter):
+Usage (from trueduck-sentinel):
     py -3.12 backend/publish_feed.py             # Save preview only (no upload).
     py -3.12 backend/publish_feed.py --publish --local
     py -3.12 backend/publish_feed.py --publish --endpoint https://your-api.example/v1/admin/feed
@@ -42,7 +42,7 @@ def publish(endpoint: str, feed: dict, token: str, local: bool = False) -> dict:
     body = json.dumps(feed, separators=(',', ':')).encode('utf-8')
     request = Request(endpoint, data=body, method='PUT', headers={
         'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json',
-        'User-Agent': 'TrueDuck Sentinel-Owner-Publisher/0.7',
+        'User-Agent': 'TrueDuckSentinel-Owner-Publisher/0.7',
     })
     try:
         with urlopen(request, timeout=15) as response:
@@ -77,7 +77,7 @@ def main() -> None:
         return
     if args.local:
         if not LOCAL_TOKEN_FILE.exists():
-            parser.error('Run START_CLOUD_API.cmd first to create the local demonstration token')
+            parser.error('Run RUN_LOCAL.cmd first to create the local demonstration token')
         token = LOCAL_TOKEN_FILE.read_text(encoding='utf-8').strip()
         endpoint = LOCAL_ENDPOINT
     else:

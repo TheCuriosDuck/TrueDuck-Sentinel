@@ -40,13 +40,13 @@
 /* Report intake is deliberately separate from automatic scanning. */
 .report-site-button{width:100%;margin-top:10px;font-size:11px;padding:9px}
 
-/* TrueDuck Security brand layer — adjust these variables to change the theme. */
-:root { --td-deep-navy:#101f38; --td-blue:#1d70bd; --td-gray:#708197; --td-white:#ffffff; }
-.popup-header { border-top:4px solid var(--td-blue); }
+/* neutral interface theme — adjust these variables to change the theme. */
+:root { --ui-deep-navy:#101f38; --ui-blue:#1d70bd; --ui-gray:#708197; --ui-white:#ffffff; }
+.popup-header { border-top:4px solid var(--ui-blue); }
 .brand-icon { border-radius:10px; }
-.td-legal { background:#f5f8fc; border-top:1px solid #e3eaf2; color:#718096; font-size:10px; line-height:1.5; padding:10px 19px 13px; }
-.td-legal a, .td-options-legal a { color:var(--accent); text-decoration:none; }
-.td-options-legal { padding:14px 25px; background:#edf2f8; color:#61748c; font-size:11px; text-align:center; line-height:1.6; }
+.legal-note { background:#f5f8fc; border-top:1px solid #e3eaf2; color:#718096; font-size:10px; line-height:1.5; padding:10px 19px 13px; }
+.legal-note a, .legal-options a { color:var(--accent); text-decoration:none; }
+.legal-options { padding:14px 25px; background:#edf2f8; color:#61748c; font-size:11px; text-align:center; line-height:1.6; }
 @media (max-width:480px) { .popup-body { width:360px; } }
 
 /* v0.9.3: compact, accessible contact reputation lookup in the consumer popup. */

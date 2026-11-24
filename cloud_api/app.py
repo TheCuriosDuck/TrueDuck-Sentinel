@@ -78,7 +78,7 @@ metadata.create_all(engine)
 
 # The extension can read GET /v1/feed without a secret.
 # No CORS middleware is enabled, so ordinary websites do not receive API access.
-app = FastAPI(title='TrueDuck Security TrueDuck Sentinel API', version='0.9.0', docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title='TrueDuck Sentinel API', version='0.9.0', docs_url=None, redoc_url=None, openapi_url=None)
 
 # A hosted API should only answer requests for its configured domain.
 # In local mode, omit this middleware so the Windows demo remains unchanged.
