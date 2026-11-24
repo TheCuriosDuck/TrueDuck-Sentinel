@@ -1,0 +1,10 @@
+If you need to set password for admin center run this through the cmd in the same folder-
+-> py -3.12 -m cloud_api.manage_owner
+
+
+here are some good to know areas to access
+
+Admin Center	127.0.0.1:8877/dashboard
+Anonymous reporting	127.0.0.1:8877/report
+Published scam database feed	127.0.0.1:8877/v1/feed
+Server status	127.0.0.1:8877/health
