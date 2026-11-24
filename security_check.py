@@ -51,13 +51,13 @@ def inspect(root: Path = PROJECT):
 
     # An explicitly selected hosted feed may use HTTPS, never arbitrary HTTP.
     for host in manifest.get('optional_host_permissions', []):
-        if not (host.startswith('https://') or host in ('http://127.0.0.1:8765/*','http://127.0.0.1:8877/*')):
+        if not (host.startswith('https://') or host in ('http://127.0.0.1:8877/*',)):
             errors.append(f'Unsafe optional host permission: {host}')
     if 'https://*/*' in manifest.get('optional_host_permissions', []):
         warnings.append('Optional HTTPS access is broad but requires explicit user consent. A store release should ideally use an audited fixed endpoint.')
 
     # The only predeclared optional hosts are HTTPS (with permission) and local test services.
-    expected = {'http://127.0.0.1:8765/*', 'http://127.0.0.1:8877/*'}
+    expected = {'http://127.0.0.1:8877/*'}
     if set(manifest.get('optional_host_permissions', [])) != expected | {'https://*/*'}:
         errors.append('Unexpected optional feed host: Only explicitly requested HTTPS or local development hosts are permitted.')
 
@@ -116,7 +116,7 @@ def inspect(root: Path = PROJECT):
 def main():
     """Return a nonzero exit code if the preflight finds a blocking error."""
     errors, warnings = inspect()
-    print('TrueDuck Sentinel v0.9.7 — static security preflight')
+    print('TrueDuck Sentinel v0.9.8 — static security preflight')
     for warning in warnings:
         print('REVIEW:', warning)
     for error in errors:

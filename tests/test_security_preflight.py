@@ -21,13 +21,12 @@ class ReleaseSafetyTests(unittest.TestCase):
 
     def test_missing_production_secrets_block_launch(self):
         issues = production.validate_production_config({'SCAMLENS_ENV': 'production'})
-        self.assertGreaterEqual(len(issues), 4)
+        self.assertGreaterEqual(len(issues), 3)
 
     def safe_production_example(self):
         return {
             'SCAMLENS_ENV': 'production',
             'SCAMLENS_CLOUD_DATABASE_URL': 'postgresql+psycopg://service:example@db/scamlens',
-            'SCAMLENS_PUBLISH_TOKEN': 'sample-only-change-this-token-0123456789abcdefghijkl',
             'SCAMLENS_PUBLIC_ORIGIN': 'https://api.example.org',
             'SCAMLENS_ALLOWED_HOSTS': 'api.example.org',
             'SCAMLENS_ALLOW_SIGNUP': '0',

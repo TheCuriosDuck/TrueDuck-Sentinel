@@ -43,32 +43,6 @@ async function scanTab() {
     byId('siteFindings').replaceChildren();
   }
 }
-async function synchronize() {
-  const token = (await chrome.storage.local.get('apiToken')).apiToken;
-  if (!token) { byId('syncMessage').textContent = 'Personal database sync is for administrators. Website protection requires no account.'; return; }
-  byId('syncMessage').textContent = 'Connecting to your local database…';
-  try {
-    // Download both sources. Only the extension sees the API token.
-    const headers = { Authorization: `Bearer ${token}` };
-    const [manualResponse, feedResponse] = await Promise.all([
-      fetch('http://127.0.0.1:8765/api/indicators', { headers, signal: AbortSignal.timeout(12000) }),
-      fetch('http://127.0.0.1:8765/api/intelligence', { headers, signal: AbortSignal.timeout(12000) })
-    ]);
-    const [manual, external] = await Promise.all([manualResponse.json(), feedResponse.json()]);
-    if (!manualResponse.ok || !feedResponse.ok) throw new Error(manual.error || external.error || 'Sync failed; update the Python backend to v0.5');
-    if (!Array.isArray(manual.records) || !Array.isArray(external.records)) throw new Error('Unexpected database response');
-    // Dismissed reports are preserved in the database, not distributed to scanners.
-    const activeReports = manual.records.filter(r => r.review_state !== 'dismissed');
-    const publicData = await chrome.storage.local.get(['publicFeedCache', 'publicFeedSyncedAt']);
-    const fresh = publicData.publicFeedSyncedAt && Date.now() - Date.parse(publicData.publicFeedSyncedAt) <= 7 * 86400000;
-    const published = fresh && Array.isArray(publicData.publicFeedCache) ? publicData.publicFeedCache : [];
-    app.records = [...activeReports, ...external.records, ...published];
-    await chrome.storage.local.set({ dbCache: [...activeReports, ...external.records], feedCount: external.records.length, dbSyncedAt: new Date().toISOString() });
-    byId('dbCount').textContent = `${activeReports.length} personal + ${external.records.length} external + ${published.length} published`;
-    byId('syncMessage').textContent = 'Database synchronized.';
-    await scanTab();
-  } catch (error) { byId('syncMessage').textContent = `Offline: using cached records. ${error.message}`; }
-}
 async function toggleMute() {
   const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
   let host;
@@ -149,13 +123,12 @@ async function lookupIndicator() {
   } finally { byId('lookupButton').disabled = false; }
 }
 async function main() {
-  const data = await chrome.storage.local.get(['dbCache', 'publicFeedCache', 'publicFeedSyncedAt', 'settings', 'dbSyncedAt', 'feedCount']);
-  const fresh = data.publicFeedSyncedAt && Date.now() - Date.parse(data.publicFeedSyncedAt) <= 7 * 86400000;
+  const data = await chrome.storage.local.get(['publicFeedCache', 'publicFeedSyncedAt', 'settings', 'adminCenterOnlyV098']);
+  const fresh = data.adminCenterOnlyV098 && data.publicFeedSyncedAt && Date.now() - Date.parse(data.publicFeedSyncedAt) <= 7 * 86400000;
   const published = fresh && Array.isArray(data.publicFeedCache) ? data.publicFeedCache : [];
-  app.records = [...(data.dbCache || []), ...published]; app.settings = data.settings || {};
+  app.records = published.filter(r => r.status === 'published' && r.review_state === 'approved'); app.settings = data.settings || {};
   document.documentElement.style.setProperty('--accent', app.settings.accent || '#3977e8');
-  const externalCount = Number(data.feedCount || 0);
-  byId('dbCount').textContent = `${Math.max(0, (data.dbCache || []).length - externalCount)} personal + ${externalCount} external + ${published.length} published`;
+  byId('dbCount').textContent = String(app.records.length);
   if (data.publicFeedSyncedAt) byId('syncMessage').textContent = `Published feed updated ${new Date(data.publicFeedSyncedAt).toLocaleString()}`;
   else byId('syncMessage').textContent = 'Offline detection active. Online feed not yet synchronized.';
   byId('settingsButton').addEventListener('click', () => chrome.runtime.openOptionsPage());
@@ -163,7 +136,7 @@ async function main() {
   byId('scanButton').addEventListener('click', scanTab);
   byId('muteButton').addEventListener('click', toggleMute);
   updateMuteButton();
-  byId('syncButton').addEventListener('click', synchronize);
+  byId('syncButton').addEventListener('click', () => chrome.runtime.openOptionsPage());
   byId('lookupButton').addEventListener('click', lookupIndicator);
   byId('lookupKind').addEventListener('change', () => {
     byId('lookupValue').placeholder = byId('lookupKind').value === 'phone' ? '(202) 555-0199' : 'name@example.com';

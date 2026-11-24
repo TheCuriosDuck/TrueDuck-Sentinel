@@ -23,10 +23,6 @@ def validate_production_config(settings: dict | None = None) -> list[str]:
     if not db_url.startswith(('postgresql+psycopg://', 'postgresql://')):
         problems.append('Production needs a PostgreSQL SCAMLENS_CLOUD_DATABASE_URL')
 
-    token = config.get('SCAMLENS_PUBLISH_TOKEN', '')
-    if len(token) < 40 or token in ('changeme', 'replace-me', 'YOUR_TOKEN'):
-        problems.append('Set a unique SCAMLENS_PUBLISH_TOKEN with at least 40 characters')
-
     origin = config.get('SCAMLENS_PUBLIC_ORIGIN', '')
     try:
         url = urlsplit(origin)

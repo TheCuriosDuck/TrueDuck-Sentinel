@@ -568,17 +568,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    # This block runs ONLY when you launch server.py directly.
-    token = bootstrap()  # Open the existing database, creating missing tables.
-    server = ThreadingHTTPServer((HOST, PORT), Handler)  # Start a local HTTP listener.
-    print("TrueDuck Sentinel database is running locally.")
-    print(f"API: http://{HOST}:{PORT}/api/health")
-    print(f"Access token: {token}")
-    print("Keep this token private. Paste it into the extension's Settings page.")
-    print("Stop with Ctrl+C. Your database remains in backend/data/scamlens.db")
-    try:
-        server.serve_forever()  # Keep running while Edge accesses the database.
-    except KeyboardInterrupt:
-        print("\nDatabase server stopped.")  # Printed when you press Ctrl+C.
-    finally:
-        server.server_close()  # Release port 8765 cleanly when exiting.
+    # Legacy database code remains for old backups and compatibility tests only.
+    # Do not expose a second live moderation API alongside the Admin Center.
+    raise SystemExit("Legacy private server retired. Start RUN_LOCAL.cmd and use the Admin Center.")

@@ -3,10 +3,10 @@
 Endpoints:
   GET  /health                 - Basic server health check.
   GET  /v1/feed                - Public read-only, approved threat indicators.
-  PUT  /v1/admin/feed          - Replace published list (owner token required).
+  POST /v1/admin/reports/...   - Authenticated community moderation only.
 
 This API never reads your private backend/data/scamlens.db file. It has a
-separate database and publisher credential. Community report writes are
+separate database and owner account. Community report writes are
 anonymous and private until moderated by an owner.
 It is NOT a complete production service: you still need HTTPS, hosting, abuse
 monitoring, tested backups, and a security review before public release.
@@ -18,17 +18,15 @@ import ipaddress                       # Reject private and loopback network tar
 import json                            # Decode and encode JSON request bodies.
 import os                              # Read credentials and the database URL from the environment.
 import re                              # Validate domain-label syntax.
-import secrets                         # Compare access tokens safely.
 from datetime import datetime, timezone  # Timestamp each new publication in UTC.
 from pathlib import Path               # Locate our local development database.
 from urllib.parse import urlsplit      # Break URLs into safe components.
 
 # --- Third-party packages; install with cloud_api/requirements.txt ---
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, delete, insert, select, update
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, select
 
 # Fail early rather than starting a public API with local-only credentials or SQLite.
 from .production import assert_production_config  # Validate hosted settings before DB setup.
@@ -78,7 +76,7 @@ metadata.create_all(engine)
 
 # The extension can read GET /v1/feed without a secret.
 # No CORS middleware is enabled, so ordinary websites do not receive API access.
-app = FastAPI(title='TrueDuck Sentinel API', version='0.9.7', docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title='TrueDuck Sentinel API', version='0.9.8', docs_url=None, redoc_url=None, openapi_url=None)
 
 # A hosted API should only answer requests for its configured domain.
 # In local mode, omit this middleware so the Windows demo remains unchanged.
@@ -105,7 +103,6 @@ async def security_response_headers(request: Request, call_next):
     return response
 
 MAX_INDICATORS = 5000                # Bound the amount of content an admin can publish.
-MAX_BODY_BYTES = 700_000            # Reject an oversized upload before JSON decoding.
 MAX_URL_LENGTH = 2100               # Limit URL lengths stored in the database.
 DOMAIN_LABEL = re.compile(r'^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$')
 
@@ -182,36 +179,20 @@ def safe_indicator(raw: dict) -> dict:
     return {'kind': 'url', 'value': value, 'classification': 'reviewed_report'}
 
 
-def check_owner_token(request: Request) -> None:
-    """Protect the publish endpoint using a separate owner-only secret.
-
-    Never put this secret in Edge's source code, public JSON, or a Git repo.
-    A strong token is only a starting protection; production needs auditing.
-    """
-    expected = os.environ.get('SCAMLENS_PUBLISH_TOKEN', '')
-    if len(expected) < 32:
-        raise HTTPException(status_code=503, detail='Publishing is not configured')
-    supplied = request.headers.get('authorization', '')
-    if not supplied.startswith('Bearer ') or not secrets.compare_digest(supplied[7:], expected):
-        raise HTTPException(status_code=401, detail='Invalid publisher credential')
-
-
 def current_feed() -> dict:
     """Build a public snapshot only from the cloud database's safe columns."""
     # Import the summary table after the community router has initialized.
-    from .community import public_review_summaries
+    from .community import public_review_summaries, reports
     with engine.connect() as connection:
-        items = connection.execute(select(indicators_table).order_by(
-            indicators_table.c.kind, indicators_table.c.value)).mappings().all()
         meta = connection.execute(select(meta_table).where(meta_table.c.id == 1)).mappings().first()
         community = connection.execute(select(
             community_public_table.c.kind, community_public_table.c.value,
             community_public_table.c.classification, public_review_summaries.c.summary
-        ).outerjoin(public_review_summaries,
-                    public_review_summaries.c.report_id == community_public_table.c.report_id)).mappings().all()
-    # Merge the two approved feeds. A matching entry appears only once.
-    # Owner-uploaded entries have precedence if both sets contain the same value.
-    merged = {(item['kind'], item['value']): dict(item) for item in items}
+        ).join(reports, reports.c.id == community_public_table.c.report_id).outerjoin(public_review_summaries,
+                    public_review_summaries.c.report_id == community_public_table.c.report_id).where(reports.c.status == "approved", reports.c.review_reference != "")).mappings().all()
+    # Old private-feed uploads are retained in storage for backup only.
+    # Only approved and explicitly published community reports are distributed.
+    merged = {}
     for item in community:
         key = (item['kind'], item['value'])
         entry = merged.setdefault(key, {k: item[k] for k in ('kind', 'value', 'classification')})
@@ -249,54 +230,9 @@ def feed(request: Request):
 
 
 @app.put('/v1/admin/feed')
-async def replace_feed(request: Request):
-    """Replace the *entire* published set after checking owner authentication.
-
-    Replacing rather than merging means an owner's retractions disappear from
-    the next public feed, instead of remaining on users' blocklists forever.
-    """
-    check_owner_token(request)
-    # Read the incoming body incrementally to enforce an actual byte limit.
-    chunks, seen = [], 0
-    async for chunk in request.stream():
-        seen += len(chunk)
-        if seen > MAX_BODY_BYTES:
-            raise HTTPException(status_code=413, detail='Publication exceeds the size limit')
-        chunks.append(chunk)
-    try:
-        payload = json.loads(b''.join(chunks))
-        if not isinstance(payload, dict) or payload.get('schema') != 'scamlens.public-feed.v1':
-            raise ValueError('Unexpected feed format')
-        submitted = payload.get('indicators')
-        if not isinstance(submitted, list) or len(submitted) > MAX_INDICATORS:
-            raise ValueError('Indicators must be a list within the item limit')
-        # Reject duplicated records rather than silently skewing the count.
-        normalized = [safe_indicator(record) for record in submitted]
-        keys = {(record['kind'], record['value']) for record in normalized}
-        if len(keys) != len(normalized):
-            raise ValueError('Duplicate indicator')
-    except (ValueError, TypeError, UnicodeDecodeError) as exc:
-        raise HTTPException(status_code=422, detail=f'Invalid feed: {exc}') from exc
-    # Replacing all rows in a transaction prevents users from seeing half an update.
-    timestamp = now_utc()
-    try:
-        with engine.begin() as connection:
-            state = connection.execute(select(meta_table).where(meta_table.c.id == 1)).mappings().first()
-            connection.execute(delete(indicators_table))
-            if normalized:
-                connection.execute(insert(indicators_table), normalized)
-            if state:
-                connection.execute(update(meta_table).where(meta_table.c.id == 1).values(
-                    generated_at=timestamp, revision=state['revision'] + 1))
-                revision = state['revision'] + 1
-            else:
-                connection.execute(insert(meta_table).values(id=1, generated_at=timestamp, revision=1))
-                revision = 1
-    except SQLAlchemyError as exc:
-        raise HTTPException(status_code=503, detail='Database temporarily unavailable') from exc
-    # Explicitly avoid returning a token or the submitted data in the response.
-    return JSONResponse({'published': len(normalized), 'revision': revision, 'generated_at': timestamp},
-                        headers={'Cache-Control': 'no-store'})
+async def replace_feed():
+    """Retire legacy publisher-token uploads, including valid old tokens."""
+    raise HTTPException(status_code=410, detail='Legacy publishing retired. Review and publish in the administrator dashboard.')
 
 
 # The community router adds account, report, moderation, and dashboard endpoints.

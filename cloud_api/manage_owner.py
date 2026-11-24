@@ -19,7 +19,7 @@ from .community import accounts, create_account, normalize_username
 def main():
     """Ask for a username and strong password, then create one owner."""
     print('TrueDuck Sentinel — create an owner account')
-    print('This is separate from the private database token and publisher token.')
+    print('Only this owner account can review and publish community reports.')
     username = input('Owner username: ').strip()
     normalize_username(username)
     with engine.connect() as connection:

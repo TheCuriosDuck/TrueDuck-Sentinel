@@ -80,6 +80,12 @@ class CommunityApiTests(unittest.TestCase):
         self.assertEqual(self.client.post(f'/v1/admin/reports/{new}/decision', json={
             'decision':'approved','note':'fake','reference':'fake'}).status_code, 401)
 
+    def test_anonymous_cannot_retract_or_enable_lookup(self):
+        record = self.submitted_id('email','anonymous@example.test')
+        for action, body in [('retract', None), ('lookup-access', {'enabled': True})]:
+            self.assertEqual(self.client.post(f'/v1/admin/reports/{record}/{action}', json=body).status_code, 401)
+        self.assertFalse(self.client.post('/v1/lookup', json={'kind':'email','value':'anonymous@example.test'}).json()['match'])
+
     def test_no_login_for_legacy_reporter_or_internal_actor(self):
         # Simulate a pre-upgrade reporter account; it must not gain admin access.
         from sqlalchemy import insert
@@ -118,8 +124,8 @@ class CommunityApiTests(unittest.TestCase):
         self.assertFalse(any(x['value'] == 'community.example.test'
                              for x in self.client.get('/v1/feed').json()['indicators']))
 
-    def test_owner_v07_publish_does_not_erase_community_publications(self):
-        # v0.7's owner feed PUT replaces only the owner set, not community work.
+    def test_retired_legacy_publish_cannot_erase_community_publications(self):
+        # The old upload route is retired, even with a former publisher token.
         record = self.submitted_id()
         self.approve(record)
         self.client.post(f'/v1/admin/reports/{record}/publish', headers=self.owner_headers)
@@ -127,7 +133,7 @@ class CommunityApiTests(unittest.TestCase):
         owner_feed_headers = {'Authorization': 'Bearer ' + os.environ['SCAMLENS_PUBLISH_TOKEN']}
         fresh_snapshot = {'schema': 'scamlens.public-feed.v1', 'indicators': []}
         response = self.client.put('/v1/admin/feed', headers=owner_feed_headers, json=fresh_snapshot)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 410)
         self.assertTrue(any(x['value'] == 'community.example.test'
                             for x in self.client.get('/v1/feed').json()['indicators']))
 

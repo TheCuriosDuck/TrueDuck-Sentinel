@@ -1,4 +1,4 @@
-/* Trusted extension service worker. Page scripts receive the watchlist, never the API token. */
+/* Trusted extension service worker. Page scripts receive only public indicators. */
 'use strict';
 importScripts('shared/feed.js');
 const DEFAULT_SETTINGS = {
@@ -8,15 +8,15 @@ const DEFAULT_SETTINGS = {
 const PUBLIC_FEED_URL = ''; // No centralized feed is configured in the source release.
 const FEED_ALARM = 'scamlens-public-feed-refresh';
 const DEFAULTS = {
-  settings: DEFAULT_SETTINGS, dbCache: [], dbSyncedAt: null, publicFeedCache: [], publicFeedUrl: PUBLIC_FEED_URL, publicFeedSyncedAt: null,
-  apiToken: '', recentAlerts: []
+  settings: DEFAULT_SETTINGS, publicFeedCache: [], publicFeedUrl: PUBLIC_FEED_URL, publicFeedSyncedAt: null,
+  recentAlerts: []
 };
-// Do not expose the owner's local API token through chrome.storage to content scripts.
+// Restrict browser storage to trusted extension contexts.
 // Only extension-owned pages and this background worker may read local storage.
 const protectionReady = chrome.storage.local.setAccessLevel({accessLevel: 'TRUSTED_CONTEXTS'});
 
-const ALLOWED_KINDS = new Set(['domain', 'url', 'email', 'phone', 'address']);
-const ALLOWED_STATUSES = new Set(['reported', 'verified', 'external', 'published']);
+const ALLOWED_KINDS = new Set(['domain', 'url']);
+const ALLOWED_STATUSES = new Set(['published']);
 function recordsForPage(list) {
   // A content script needs the indicator value to match locally, NOT notes,
   // evidence references, reviewer identities, publisher credentials, or tokens.
@@ -25,7 +25,7 @@ function recordsForPage(list) {
   return list.slice(0, 5000).filter(record =>
     record && ALLOWED_KINDS.has(record.kind) &&
     typeof record.value === 'string' && record.value.length <= 2100 &&
-    record.review_state !== 'dismissed'
+    record.review_state === 'approved' && ALLOWED_STATUSES.has(record.status)
   ).map(record => ({
     kind: record.kind,
     value: record.value,
@@ -37,17 +37,27 @@ function recordsForPage(list) {
   }));
 }
 
-async function initialize() {
+async function initializeOnce() {
   await protectionReady;
+  // Remove old private administrator credentials and records from upgraded extensions.
+  await chrome.storage.local.remove(['apiToken', 'dbCache', 'dbSyncedAt', 'feedCount', 'feedUpdatedAt']);
+  // Old public caches could include legacy uploaded entries. Force one fresh sync.
+  const migration = await chrome.storage.local.get('adminCenterOnlyV098');
+  if (!migration.adminCenterOnlyV098) {
+    await chrome.storage.local.set({publicFeedCache: [], publicFeedSyncedAt: null, adminCenterOnlyV098: true});
+    await chrome.permissions.remove({origins: ['http://127.0.0.1:8765/*']}).catch(() => {});
+  }
   const saved = await chrome.storage.local.get(Object.keys(DEFAULTS));
   const missing = Object.fromEntries(Object.entries(DEFAULTS).filter(([key]) => saved[key] === undefined));
   if (Object.keys(missing).length) await chrome.storage.local.set(missing);
 }
+let initialization;
+function initialize() { return initialization ||= initializeOnce(); }
 // Automatic, read-only feed updates require no account or access token.
 // No required network host: users opt in to a feed server in Settings.
 async function refreshPublicFeed() {
   // Only fetch from a feed manually configured by the user in Settings.
-  await protectionReady;
+  await initialize();
   const stored = await chrome.storage.local.get('publicFeedUrl');
   if (!stored.publicFeedUrl) return;
   try {
@@ -84,14 +94,14 @@ initialize().then(() => chrome.alarms.create(FEED_ALARM, {periodInMinutes: 360})
 
 
 async function getConfig() {
-  await protectionReady;
-  const saved = await chrome.storage.local.get(['settings', 'dbCache', 'publicFeedCache', 'publicFeedSyncedAt']);
+  await initialize();
+  const saved = await chrome.storage.local.get(['settings', 'publicFeedCache', 'publicFeedSyncedAt']);
   // A published report that has not been refreshed for a week should not
   // keep generating warnings forever if the owner has retracted it.
   const publishedFresh = saved.publicFeedSyncedAt && Date.now() - Date.parse(saved.publicFeedSyncedAt) <= 7 * 86400000;
   return {
     settings: {...DEFAULT_SETTINGS, ...(saved.settings || {})},
-    records: recordsForPage([...(Array.isArray(saved.dbCache) ? saved.dbCache : []), ...(publishedFresh && Array.isArray(saved.publicFeedCache) ? saved.publicFeedCache : [])])
+    records: recordsForPage(publishedFresh ? saved.publicFeedCache : [])
   };
 }
 function hostnameOf(url) {
@@ -128,7 +138,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || (!changes.settings && !changes.dbCache && !changes.publicFeedCache)) return;
+  if (area !== 'local' || (!changes.settings && !changes.publicFeedCache)) return;
   chrome.tabs.query({}).then(tabs => {
     tabs.forEach(tab => {
       if (tab.id !== undefined) chrome.tabs.sendMessage(tab.id, {type: 'CONFIG_CHANGED'}).catch(() => {});
