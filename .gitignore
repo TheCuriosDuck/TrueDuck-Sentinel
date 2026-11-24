@@ -1,0 +1,39 @@
+backend/data/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+# Keep any local API credentials and downloaded data out of version control.
+*.csv.tmp
+.env
+cloud_api/data/
+*.db
+*.db-shm
+*.db-wal
+.venv/
+
+# Never publish live data or authentication material.
+*.sqlite
+*.sqlite3
+*.db-journal
+*.pem
+*.key
+*.p12
+*.pfx
+*.bak
+*.backup
+*.log
+.env.*
+!.env.example
+
+# Local developer state and compiled/cache output
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.vscode/
+.idea/

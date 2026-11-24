@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TrueDuck Security | TrueDuck Sentinel Dashboard</title><link rel="stylesheet" href="styles.css"></head>
+<body class="dashboard-body">
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="brand sidebar-brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Security</strong><small>TrueDuck Sentinel · Intelligence console</small></div></div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <a href="#overview" class="nav-link">▦ <span>Overview</span></a>
+      <a href="#watchlist" class="nav-link active">▤ <span>Watchlist</span></a>
+      <a href="#review" class="nav-link">◇ <span>Review queue</span></a>
+      <a href="#activity" class="nav-link">◷ <span>Activity</span></a>
+      <a href="#preferences" class="nav-link">⚙ <span>Preferences</span></a>
+      <div class="sidebar-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionText">Database not connected</span><small>Version 0.9.3 Beta · Consumer / Admin</small></div>
+    </aside>
+    <main class="dashboard-main">
+      <div class="topline"><span>SECURITY / DASHBOARD</span><span class="topline-right">PRIVATE WORKSPACE</span></div>
+      <section id="overview" class="page-intro"><div class="eyebrow">TrueDuck Security · Threat intelligence</div><h1>TrueDuck Sentinel protection center</h1><p>Maintain your own records and review possible matches without sending webpage text to a remote service.</p></section>
+      <section class="stat-grid">
+        <div class="stat-card"><span>WATCHLIST ENTRIES</span><strong id="totalCount">0</strong><small>Locally cached</small></div>
+        <div class="stat-card"><span>REVIEWED ENTRIES</span><strong id="verifiedCount">0</strong><small>Approved by the local reviewer</small></div>
+        <div class="stat-card"><span>EXTERNAL MALWARE URLS</span><strong id="externalCount">0</strong><small id="feedUpdated">Not imported yet</small></div>
+        <div class="stat-card"><span>DATABASE STATUS</span><strong id="apiState" class="stat-status">Offline</strong><small id="lastSync">No synchronization yet</small></div>
+      </section>
+      <section class="panel" id="connection"><div class="panel-title"><div><h2>Database connection</h2><p>Administrator setup only: ordinary Edge users need no token, Python server, or account.</p></div><span class="pill">Localhost</span></div><div class="connection-form"><div class="flex-one"><label for="apiToken">Access token</label><input id="apiToken" type="password" autocomplete="off" placeholder="Paste token from backend window"></div><button type="button" id="connectButton" class="primary-button">Connect & sync</button><button type="button" id="refreshButton" class="secondary-button">Refresh</button></div><div class="hint" id="connectionMessage" aria-live="polite">The token stays in trusted extension storage. Page-scanning scripts cannot request it. Do not publish or share it.</div></section>
+      <section class="panel" id="threat-feed"><div class="panel-title"><div><h2>External threat intelligence</h2><p>Optional URLhaus data: exact online malware-distribution URLs, kept separate from your personally reviewed reports.</p></div><span class="pill">Optional · URLhaus</span></div>
+        <p class="hint">Open a Command Prompt in this project folder. Run <code>py -3.12 backend/update_urlhaus.py --sample</code> to load fictional test URLs, or run <code>py -3.12 backend/update_urlhaus.py</code> for the live feed with your own URLhaus Auth-Key. Then click <b>Refresh</b> above. Never paste a feed key into this extension.</p>
+        <p class="hint">External entries are read-only here and are not included in your personal JSON export. They are not evidence that an entire website or person is fraudulent. Check usage rights before distributing a commercial product.</p>
+      </section>
+      <section class="panel" id="public-feed">
+        <div class="panel-title"><div><h2>Public intelligence feed (preview)</h2>
+        <p>Prepare a separate feed for future users without exposing private reports. Nothing is uploaded automatically.</p></div><span class="pill">Private preview</span></div>
+        <p class="hint">Only <b>approved domains or URLs that you explicitly share</b> can appear here. Emails, phone numbers, street addresses, unverified reports, external-feed entries, and your evidence notes are excluded. Do not publish indicator data without verifying accuracy and permission.</p>
+        <div class="connection-form"><span id="publicCount" class="hint">0 records selected for sharing.</span><button id="downloadPublicFeed" type="button" class="secondary-button">Download public feed JSON</button></div>
+        <p id="publicMessage" class="hint" aria-live="polite">Use “Share in feed” beside an approved domain or URL in your indicator database below. Downloading creates a local file only.</p>
+      </section>
+      <section class="panel" id="cloud-feed">
+        <div class="panel-title"><div><h2>TrueDuck published intelligence feed</h2><p>Regular users automatically receive approved indicators from the TrueDuck HTTPS API after deployment. Local test feeds can be selected manually.</p></div><span class="pill">Automatic HTTPS</span></div>
+        <p class="hint">Only the public domain/URL list is downloaded. Webpage text, private reports, and your database token are never uploaded. For a local test run <code>START_CLOUD_API.cmd</code> and <code>PUBLISH_LOCAL_FEED.cmd</code>.</p>
+        <div class="connection-form"><label for="cloudUrl">Feed URL</label><input id="cloudUrl" type="url" spellcheck="false" placeholder="https://api.trueducksecurity.com/v1/feed" aria-label="Published feed URL"><button id="syncCloudButton" class="primary-button" type="button">Sync published feed</button><button id="clearCloudButton" class="secondary-button" type="button">Clear feed</button></div>
+        <p id="cloudFeedStatus" class="hint">Cloud feed not synchronized.</p><p id="cloudMessage" class="hint" aria-live="polite"></p>
+      </section>
+      <section class="panel" id="community-console">
+        <div class="panel-title"><div><h2>Community reporting and moderation</h2><p>Separate account-based reports, owner review, a reporting dashboard, and controls for approved public publication.</p></div><span class="pill">v0.9</span></div>
+        <p class="hint">This is a separate console on the local cloud API. To test it, start the cloud API, create an owner account using <code>CREATE_OWNER.cmd</code>, then open the console. Reporter accounts can only see their own submissions.</p>
+        <div class="connection-form"><button id="openCommunityConsole" type="button" class="primary-button">Open community console</button><span class="hint">Local demo: 127.0.0.1:8877/dashboard</span></div>
+      </section>
+      <section class="panel" id="watchlist"><div class="panel-title"><div><h2>Indicator database</h2><p>Submit a reported domain, URL, email, phone number or address. Then review its evidence in the queue below. A match is not proof of fraud.</p></div><div class="data-actions"><button id="importButton" class="secondary-button" type="button">Import JSON</button><button id="exportButton" class="secondary-button" type="button">Export JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></div>
+        <div id="importMessage" class="hint" aria-live="polite"></div>
+        <form id="addForm" class="indicator-form">
+          <div class="field"><label for="kind">Indicator type</label><select id="kind" required><option value="domain">Domain</option><option value="url">URL</option><option value="email">Email address</option><option value="phone">Phone number (US/Canada)</option><option value="address">Physical address</option></select></div>
+          <div class="field span-two"><label for="value">Value</label><input id="value" required maxlength="500" placeholder="example-scam.test"></div>
+          <div class="field"><label for="status">Review status</label><select id="status"><option value="reported">Pending review</option></select></div>
+          <div class="field"><label for="source">Source / reference</label><input id="source" maxlength="200" placeholder="Personal report or source reference"></div>
+          <div class="field span-two"><label for="reason">Notes</label><input id="reason" maxlength="500" placeholder="Why this item was reported or flagged"></div>
+          <div class="form-actions"><span class="hint">New reports enter the review queue. If reporting an issue on a large platform, use a specific URL rather than flagging the whole platform domain.</span><button class="primary-button" id="addButton" type="submit">+ Add indicator</button></div>
+        </form>
+        <div id="formMessage" class="hint" aria-live="polite"></div>
+        <div class="table-controls"><div class="table-label">SAVED RECORDS <span id="visibleCount">0</span></div><input id="recordSearch" type="search" placeholder="Filter records…" aria-label="Filter records"></div>
+        <div class="table-scroll"><table><thead><tr><th>TYPE / VALUE</th><th>STATUS</th><th>SOURCE</th><th>ADDED</th><th></th></tr></thead><tbody id="recordsBody"><tr><td colspan="5" class="empty-state">No entries yet. Start your database by adding an indicator above.</td></tr></tbody></table></div>
+      </section>
+      <section class="panel" id="review"><div class="panel-title"><div><h2>Report review queue</h2><p>Approve, dismiss, or reopen reports after examining their evidence. Dismissed entries stay in your database but do not trigger warnings.</p></div><span class="pill" id="pendingCount">0 pending</span></div>
+        <div class="table-controls"><div class="table-label">REPORTS BY REVIEW STATE</div><select id="reviewFilter" aria-label="Filter review state"><option value="pending">Pending only</option><option value="all">All reports</option><option value="approved">Approved</option><option value="dismissed">Dismissed</option></select></div>
+        <div class="table-scroll"><table><thead><tr><th>INDICATOR</th><th>REVIEW STATE</th><th>REPORTED</th><th>ACTION</th></tr></thead><tbody id="queueBody"></tbody></table></div>
+        <form id="reviewForm" class="review-form" hidden>
+          <div class="panel-title"><div><h3>Review selected report</h3><p id="reviewTarget">No report selected</p></div><button type="button" id="cancelReview" class="secondary-button">Cancel</button></div>
+          <div class="review-fields">
+            <div class="field"><label for="reviewDecision">Decision</label><select id="reviewDecision"><option value="approved">Approve for watchlist</option><option value="dismissed">Dismiss / do not alert</option><option value="pending">Reopen as pending</option></select></div>
+            <div class="field"><label for="evidenceReference">Evidence reference (needed to approve)</label><input id="evidenceReference" maxlength="300" placeholder="Case ID or source reference"></div>
+            <div class="field review-wide"><label for="reviewNote">Review note</label><textarea id="reviewNote" maxlength="500" rows="3" placeholder="What did you verify, and why did you choose this decision?" required></textarea></div>
+          </div>
+          <p class="hint">Review approval describes your decision, not independent proof of wrongdoing. Evidence references are stored locally and are never fetched automatically.</p>
+          <div class="review-actions"><button type="submit" class="primary-button">Save decision</button><span id="reviewMessage" class="hint" aria-live="polite"></span></div>
+        </form>
+      </section>
+      <section class="panel" id="review-history"><div class="panel-title"><div><h2>Review history</h2><p>Local audit trail of review decisions. No webpage bodies or messages are recorded here.</p></div></div>
+        <div class="table-scroll"><table><thead><tr><th>INDICATOR</th><th>DECISION</th><th>NOTE / REFERENCE</th><th>TIME</th></tr></thead><tbody id="reviewHistoryBody"></tbody></table></div>
+      </section>
+      <section class="panel" id="activity"><div class="panel-title"><div><h2>Recent alerts</h2><p>Optional local-only history. Saves website hostname, date, and alert category—never message text or full links.</p></div><button id="clearHistory" class="secondary-button" type="button">Clear history</button></div>
+        <div class="table-scroll"><table><thead><tr><th>WEBSITE</th><th>TYPE</th><th>TIME</th></tr></thead><tbody id="historyBody"><tr><td colspan="3" class="empty-state">History is turned off by default.</td></tr></tbody></table></div>
+      </section>
+      <section class="panel" id="preferences"><div class="panel-title"><div><h2>Preferences</h2><p>Adjust how the extension looks and how often it warns.</p></div></div>
+        <div class="setting-row"><div><strong>Automatic webpage scanning</strong><p>Analyze visible webpage text locally when a page loads or changes.</p></div><input type="checkbox" id="autoScan" class="switch-input"></div>
+        <div class="setting-row"><div><strong>Show on-page warning</strong><p>Display a small dismissible notice when an indicator is found.</p></div><input type="checkbox" id="showWarning" class="switch-input"></div>
+        <div class="setting-row"><div><strong>Remember recent alerts (off by default)</strong><p>Save up to 50 website hostnames and alert types on this device. No page text or full URL is stored.</p></div><input type="checkbox" id="saveHistory" class="switch-input"></div>
+        <div class="setting-row"><div><strong>Message sensitivity</strong><p>How many distinct suspicious language patterns trigger a caution.</p></div><select id="sensitivity"><option value="low">Low (3 patterns)</option><option value="balanced">Balanced (2 patterns)</option><option value="high">High (1 pattern)</option></select></div>
+        <div class="setting-row"><div><strong>Interface accent</strong><p>Choose a color for your extension controls.</p></div><input id="accent" type="color" value="#3977e8" aria-label="Interface accent color"></div>
+        <div class="setting-row"><div><strong>Paused sites</strong><p>Scanning is turned off for these domains and their subdomains. Use this only for sites you intentionally want to exclude.</p></div><div class="muted-site-control"><div id="mutedList" class="muted-list"></div><input id="mutedInput" placeholder="example.org" aria-label="Website to pause"><button id="addMuted" type="button" class="secondary-button">Add site</button></div></div>
+        <button id="savePreferences" type="button" class="primary-button">Save preferences</button> <span id="preferencesMessage" class="hint" aria-live="polite"></span>
+      </section>
+      <footer class="dashboard-footer">TrueDuck Sentinel v0.9.3 Beta · Developed by <strong>TrueDuck Security</strong><div>Results are advisory and do not determine whether a person or business is fraudulent.</div></footer>
+    </main>
+  </div>
+  <script src="options.js"></script>
+<div class="td-options-legal">TrueDuck Security provides educational support, scam awareness, and fraud guidance. We are not a law firm, law enforcement agency, bank, or government agency, and we do not guarantee results or the recovery of lost funds. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">trueducksecurity.com</a></div>
+</body>
+</html>

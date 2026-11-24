@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrueDuck Sentinel Beta | TrueDuck Security</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="popup-body">
+  <div class="popup-shell">
+    <header class="popup-header">
+      <div class="brand"><img src="assets/icon48.png" alt="" class="brand-icon"><div><strong>TrueDuck Security</strong><small>TrueDuck Sentinel v0.9.3 Beta · Automatic protection</small></div></div>
+      <button id="settingsButton" class="icon-button" type="button" aria-label="Open settings" title="Settings">⚙</button>
+    </header>
+    <main class="popup-main">
+      <div class="section-label">CURRENT SITE</div>
+      <div class="site-card">
+        <div class="site-heading"><span id="siteIcon" class="status-orb"></span><div class="grow"><div id="siteName" class="site-name">Checking page…</div><div id="siteMessage" class="secondary-text">Scanning visible page information</div></div></div>
+        <div id="siteFindings" class="findings" aria-live="polite"></div>
+        <div class="site-actions"><button class="subtle-button" id="scanButton" type="button">↻ &nbsp;Scan again</button><button class="subtle-button" id="muteButton" type="button">Pause this site</button></div>
+        <button class="secondary-button report-site-button" id="reportSiteButton" type="button">Administrator: add site to private queue</button>
+        <button class="secondary-button report-site-button" id="communitySiteButton" type="button">Optional: submit report (account)</button>
+      </div>
+      <div class="section-label with-space">LOOK UP EMAIL OR PHONE</div>
+      <section class="lookup-card" aria-label="Email and phone reputation lookup">
+        <label class="field-label" for="lookupKind">What would you like to check?</label>
+        <div class="lookup-grid">
+          <select id="lookupKind" aria-label="Indicator type"><option value="email">Email address</option><option value="phone">Phone number (US / Canada)</option></select>
+          <input id="lookupValue" type="text" autocomplete="off" spellcheck="false" maxlength="190" placeholder="name@example.com" aria-label="Email or phone" />
+        </div>
+        <button id="lookupButton" type="button" class="primary-button full">Look up indicator</button>
+        <div id="lookupResult" class="results-panel" hidden aria-live="polite"></div>
+        <p class="lookup-privacy">No account needed. The value you enter is checked locally first; clicking Look up also sends it to the TrueDuck API over HTTPS when available. It is never sent automatically while you browse. Not found does not mean safe.</p>
+      </section>
+      <div class="section-label with-space">QUICK CHECK</div>
+      <label class="field-label" for="manualInput">Paste a message, link, email or phone number</label>
+      <textarea id="manualInput" placeholder="Example: Contact alerts@example.test right away…" rows="3" maxlength="20000"></textarea>
+      <button class="primary-button full" id="checkButton" type="button">Check text</button>
+      <div id="manualResults" class="results-panel" hidden aria-live="polite"></div>
+      <div class="database-row"><div><span class="small-dot"></span><strong id="dbCount">0 records</strong><span class="secondary-text"> available locally</span></div><button id="syncButton" type="button" class="text-button">Sync</button></div>
+      <div id="syncMessage" class="muted-caption" aria-live="polite"></div>
+    </main>
+    <footer class="popup-footer"><span>Scam awareness &amp; educational guidance</span><button id="manageButton" type="button" class="text-button">Manage database →</button></footer>
+    <div class="td-legal">TrueDuck Security provides educational support and fraud guidance. A warning or clean scan does not prove whether a site is safe or fraudulent. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">Company website</a></div>
+  </div>
+  <script src="shared/detector.js"></script>
+  <script src="shared/lookup.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Prevent private databases, secrets, caches, and old ZIPs from entering a build.
+backend/data/
+cloud_api/data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+**/__pycache__/
+**/*.pyc
+.env
+*.zip
+.git/
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.bak
+*.backup
+*.log

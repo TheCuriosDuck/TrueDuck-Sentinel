@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrueDuck Security | Community Intelligence</title>
+  <link rel="stylesheet" href="/dashboard/styles.css">
+  <script src="/dashboard/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark">TD</span><span><b>TrueDuck Security</b><small>SENTINEL INTELLIGENCE CONSOLE</small></span></div>
+    <div class="masthead-right"><span class="env"><span class="env-dot"></span> LOCAL DEVELOPMENT</span><span id="userLabel" class="user-label"></span><button type="button" id="logoutButton" class="small-button" hidden>Sign out</button></div>
+  </header>
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-caption">WORKSPACE</div>
+      <nav aria-label="Workspace navigation">
+        <button type="button" class="nav-item active" data-screen="overview">▦ <span>Overview</span></button>
+        <button type="button" class="nav-item" data-screen="submit">⊕ <span>Submit report</span></button>
+        <button type="button" class="nav-item" data-screen="my-reports">▤ <span>My reports</span></button>
+        <button type="button" class="nav-item owner-only" data-screen="moderation" hidden>◫ <span>Moderation</span><span id="navPending" class="nav-count">0</span></button>
+        <button type="button" class="nav-item owner-only" data-screen="audit" hidden>◷ <span>Audit history</span></button>
+      </nav>
+      <div class="sidebar-note"><b>Privacy first</b><p>Reports are private until an owner reviews and explicitly publishes a safe domain or URL.</p></div>
+    </aside>
+    <section class="content">
+      <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+
+      <section id="authScreen" class="auth-screen">
+        <div class="eyebrow">ACCOUNT ACCESS</div><h1>Sign in to TrueDuck Security</h1>
+        <p class="muted intro">Manage your own reports or moderate the community review queue.</p>
+        <div class="auth-grid">
+          <form id="loginForm" class="panel form-panel">
+            <h2>Sign in</h2>
+            <label for="loginUser">Username</label><input id="loginUser" autocomplete="username" required maxlength="32" placeholder="yourusername">
+            <label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password" minlength="12" required placeholder="Your password">
+            <button class="primary" type="submit">Sign in securely</button>
+            <p class="micro">Sessions expire after eight hours. Don't reuse another account password.</p>
+          </form>
+          <form id="registerForm" class="panel form-panel">
+            <h2>Reporter's account</h2>
+            <p class="muted">For local testing. A username is enough; no email address is required.</p>
+            <label for="registerUser">Choose a username</label><input id="registerUser" autocomplete="username" required minlength="3" maxlength="32" placeholder="sampletester">
+            <label for="registerPass">Choose a password</label><input id="registerPass" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="12 or more characters">
+            <button class="secondary" type="submit">Create reporter account</button>
+            <p class="micro">Public registration is disabled by default outside the local demo.</p>
+          </form>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <section id="overviewScreen" class="screen">
+          <div class="page-heading"><div><div class="eyebrow">OVERVIEW</div><h1>Security operations</h1><p>Report intake, review decisions, and publishing activity.</p></div><button id="refreshButton" class="secondary" type="button">↻ Refresh</button></div>
+          <div id="ownerOverview" class="owner-only" hidden>
+            <div class="metric-grid">
+              <div class="metric"><span>ALL REPORTS</span><strong id="metricTotal">—</strong><small>Submitted to the community queue</small></div>
+              <div class="metric"><span>AWAITING REVIEW</span><strong id="metricPending">—</strong><small>Require owner review</small></div>
+              <div class="metric"><span>APPROVED</span><strong id="metricApproved">—</strong><small>Approved does not mean published</small></div>
+              <div class="metric"><span>PUBLISHED</span><strong id="metricPublished">—</strong><small>Explicitly shared URLs or domains</small></div>
+            </div>
+            <div class="two-columns">
+              <div class="panel"><div class="panel-head"><h2>Reports by type</h2><span class="pill">All time</span></div><div id="typeBars" class="bars"><p class="muted">No data yet.</p></div></div>
+              <div class="panel"><div class="panel-head"><h2>Recent submissions</h2><span class="pill">Daily count</span></div><div id="dailyBars" class="bars"><p class="muted">No data yet.</p></div></div>
+            </div>
+          </div>
+          <div class="panel notice"><h2>How the review process works</h2><div class="steps"><div><b>01</b><span>Someone submits a report. It stays private.</span></div><div><b>02</b><span>An owner examines supporting evidence and records a decision.</span></div><div><b>03</b><span>Approved domains or URLs can be published separately, then retracted.</span></div></div><p class="muted micro">A report or feed match is not independent proof of fraud. TrueDuck Security does not automatically contact URLs in reports.</p></div>
+        </section>
+
+        <section id="submitScreen" class="screen" hidden>
+          <div class="page-heading"><div><div class="eyebrow">COMMUNITY INTAKE</div><h1>Submit a suspicious indicator</h1><p>Describe what you observed. Only submit material you have a legitimate reason to share.</p></div></div>
+          <form id="reportForm" class="panel report-form">
+            <div class="field-grid"><div><label for="reportKind">Indicator type</label><select id="reportKind" required><option value="domain">Domain</option><option value="url">URL</option><option value="email">Email address</option><option value="phone">Phone number (US/Canada)</option><option value="address">Physical address</option></select></div><div><label for="reportValue">Indicator</label><input id="reportValue" required maxlength="500" placeholder="example.test"></div></div>
+            <label for="reportDetails">What happened?</label><textarea id="reportDetails" required maxlength="600" rows="5" placeholder="Describe the message or suspicious behavior without sharing passwords, account numbers, or private messages."></textarea>
+            <label for="reportEvidence">Evidence reference (optional)</label><input id="reportEvidence" maxlength="300" placeholder="Case number, source reference, or public article identifier">
+            <p class="micro">For URLs, remove query strings and fragments because they can contain private tokens. Evidence references are never fetched automatically.</p>
+            <button class="primary" type="submit">Submit to review queue</button>
+          </form>
+        </section>
+
+        <section id="my-reportsScreen" class="screen" hidden>
+          <div class="page-heading"><div><div class="eyebrow">REPORT HISTORY</div><h1>My submissions</h1><p>See the status of reports you've submitted.</p></div></div>
+          <div class="panel"><div class="table-wrap"><table><thead><tr><th>Indicator</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myReportsBody"></tbody></table></div></div>
+        </section>
+
+        <section id="moderationScreen" class="screen owner-only" hidden>
+          <div class="page-heading"><div><div class="eyebrow">OWNER WORKSPACE</div><h1>Moderation queue</h1><p>Review reports before allowing any entry into the published threat feed.</p></div></div>
+          <div class="panel"><div class="panel-head"><h2>Community submissions</h2><label class="inline-filter">Status <select id="moderationFilter"><option value="pending">Pending</option><option value="all">All</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label></div><div id="moderationList" class="report-cards"></div></div>
+          <div id="reviewPanel" class="panel review-panel" hidden>
+            <div class="panel-head"><h2>Review selected report</h2><button id="cancelReview" class="small-button" type="button">Close</button></div><div class="selected-record" id="selectedReport"></div>
+            <form id="decisionForm"><div class="field-grid"><div><label for="decisionValue">Decision</label><select id="decisionValue"><option value="approved">Approve</option><option value="rejected">Reject</option><option value="pending">Reopen as pending</option></select></div><div><label for="decisionReference">Evidence reference (required for approval)</label><input id="decisionReference" maxlength="300"></div></div><label for="decisionNote">Reason for decision</label><textarea id="decisionNote" rows="3" maxlength="600" required placeholder="Record why you reached this decision."></textarea><button class="primary" type="submit">Save decision</button></form>
+            <p class="micro">Changing a decision retracts any previously published entry. Publishing is a separate owner action.</p>
+          </div>
+        </section>
+
+        <section id="auditScreen" class="screen owner-only" hidden>
+          <div class="page-heading"><div><div class="eyebrow">GOVERNANCE</div><h1>Audit history</h1><p>Review the latest moderation and publication events.</p></div></div>
+          <div class="panel"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Action</th><th>Note</th><th>Time</th></tr></thead><tbody id="auditBody"></tbody></table></div></div>
+        </section>
+      </section>
+      <footer>SENTINEL v0.9.3 BETA · Local testing only · Editable source code · No guarantee of fraud detection</footer>
+    </section>
+  </main>
+<footer class="td-console-footer">TrueDuck Security · TrueDuck Sentinel | Educational scam awareness and fraud guidance only. No promise of threat detection or recovery. <a href="https://trueducksecurity.com/" target="_blank" rel="noopener noreferrer">Company website</a></footer>
+</body>
+</html>

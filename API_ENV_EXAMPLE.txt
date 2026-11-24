@@ -1,0 +1,8 @@
+# Example future production configuration (DO NOT use as-is)
+# Do not put real secrets into Git or share them in chat.
+SCAMLENS_ENV=production
+SCAMLENS_PUBLIC_ORIGIN=https://api.trueducksecurity.com
+SCAMLENS_ALLOWED_HOSTS=api.trueducksecurity.com
+SCAMLENS_ALLOW_SIGNUP=0
+SCAMLENS_CLOUD_DATABASE_URL=postgresql+psycopg://CHANGE:CHANGE@DB_HOST/DB_NAME
+SCAMLENS_PUBLISH_TOKEN=GENERATE_A_RANDOM_PRIVATE_TOKEN_OF_40_OR_MORE_CHARACTERS

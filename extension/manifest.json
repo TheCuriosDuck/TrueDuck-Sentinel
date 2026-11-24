@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "TrueDuck Sentinel Beta — TrueDuck Security",
+  "short_name": "Sentinel",
+  "version": "0.9.3",
+  "description": "TrueDuck Sentinel warns about suspicious website content and reviewed risk indicators. Optional email and phone lookup; no account required.",
+  "author": "TrueDuck Security",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://api.trueducksecurity.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TrueDuck Sentinel Beta",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "shared/detector.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "optional_host_permissions": [
+    "http://127.0.0.1:8765/*",
+    "http://127.0.0.1:8877/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; connect-src 'self' http://127.0.0.1:8765 http://127.0.0.1:8877 https://api.trueducksecurity.com"
+  },
+  "homepage_url": "https://trueducksecurity.com/",
+  "version_name": "0.9.3 Beta"
+}
