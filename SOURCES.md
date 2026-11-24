@@ -46,9 +46,7 @@ The current declared Python dependencies are in `cloud_api/requirements.txt`. Ot
 
 ## AI-assisted development disclosure
 
-This project was developed with assistance from OpenAI's ChatGPT. AI was used to generate and revise source code, help design the architecture, troubleshoot errors, suggest security controls, write documentation, and develop automated tests.
-
-The maintainer directed the project's requirements and design decisions, installed and tested builds, reported errors, and guided revisions. AI assistance contributed substantially to the implementation; the project is not represented as entirely handwritten by its maintainer.
+ AI was used to generate and revise source code, help design the architecture, troubleshoot errors, suggest security controls, write documentation, and develop automated tests.
 
 AI-generated code can contain errors, vulnerabilities, or licensing issues. Automated tests and static security checks do not constitute an independent security audit. The project remains experimental, and community contributions, code reviews, and security improvements are encouraged.
 
